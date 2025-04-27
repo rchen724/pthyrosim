@@ -5,47 +5,87 @@
 //  Created by Shruthi Sathya on 4/15/25.
 //
 
+import Charts
 import SwiftUI
 
 struct SimulationView: View {
+    
+    @AppStorage("t4Secretion") private var t4Secretion: String = "100"
+    @AppStorage("t3Secretion") private var t3Secretion: String = "100"
+    @AppStorage("height") private var height: String = "1.65" // in meters
+    @AppStorage("weight") private var weight: String = "60"
+    @AppStorage("selectedGender") private var gender: String = "Female"
+    @AppStorage("simulationDays") private var simulationDays: String = "5"
+
+    @State private var simResult: ThyroidSimulationResult? = nil
+    @State private var navigateToGraph: Bool = false
+
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea(edges: [.top, .horizontal]) // Keep bottom safe area for nav bar
-            
-            VStack(spacing: 30) {
-                Text("Run Simulation")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.top)
-
-                // Image placeholder
-                Image("thyrosim")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 350)
-                    .padding(.horizontal)
-
-                // Simulation Button
-                Button(action: {
-                    // Action when button is tapped
-                    print("Simulation Started")
-                }) {
-                    Text("START SIMULATION")
-                        .fontWeight(.bold)
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea(edges: [.top, .horizontal]) // Keep bottom safe area for nav bar
+                
+                VStack(spacing: 30) {
+                    Text("Run Simulation")
+                        .font(.title2)
+                        .fontWeight(.semibold)
                         .foregroundColor(.white)
-                        .padding(.vertical, 15)
-                        .padding(.horizontal, 40)
-                        .background(Color.blue)
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.purple, style: StrokeStyle(lineWidth: 1, dash: [5]))
-                        )
-                }
+                        .padding(.top)
 
-                Spacer() // Pushes content up and makes space for bottom nav
-                    .frame(height: 80) // Adjust height as needed
+                    // Image placeholder
+                    Image("thyrosim")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxHeight: 350)
+                        .padding(.horizontal)
+                    
+                    // Simulation Button
+                    Button(action: {
+                        print("Simulation Started")
+                        guard let t4Sec = Double(t4Secretion),
+                              let t3Sec = Double(t3Secretion),
+                              let h = Double(height),
+                              let w = Double(weight),
+                              let d = Int(simulationDays),
+                              !gender.isEmpty
+                        else {
+                            print("Invalid input values")
+                            return
+                        }
+                        let simulator = ThyroidSimulator(
+                            t4Secretion: t4Sec,
+                            t3Secretion: t3Sec,
+                            gender: gender,
+                            height: h,
+                            weight: w,
+                            days: d
+                        )
+                        let result = simulator.runSimulation()
+                        simResult = result
+                        navigateToGraph = true
+                    }) {
+                        Text("START SIMULATION")
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.vertical, 15)
+                            .padding(.horizontal, 40)
+                            .background(Color.blue)
+                            .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.purple, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                            )
+                    }
+
+                    Spacer()
+                        .frame(height: 80)
+                }
+                .padding()
+            }
+            .navigationDestination(isPresented: $navigateToGraph) {
+                if let result = simResult {
+                    SimulationGraphView(result: result)
+                }
             }
         }
     }

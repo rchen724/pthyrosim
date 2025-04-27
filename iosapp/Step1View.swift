@@ -8,17 +8,17 @@
 import SwiftUI
 
 struct Step1View: View {
-    @State private var t4Secretion: String = "100"
-    @State private var t4Absorption: String = "88"
-    @State private var t3Secretion: String = "100"
-    @State private var t3Absorption: String = "88"
-    @State private var simulationDays: String = "5"
-    @State private var height: String = "5"
-    @State private var weight: String = "5"
-    @State private var selectedGender: String = ""
-    let genders = ["Male", "Female", "Non-binary", "Prefer not to say"]
+    @AppStorage("t4Secretion") private var t4Secretion: String = "100"
+    @AppStorage("t4Absorption") private var t4Absorption: String = "88"
+    @AppStorage("t3Secretion") private var t3Secretion: String = "100"
+    @AppStorage("t3Absorption") private var t3Absorption: String = "88"
+    @AppStorage("simulationDays") private var simulationDays: String = "5"
+    @AppStorage("height") private var height: String = "1.68"
+    @AppStorage("weight") private var weight: String = "70"
+    @AppStorage("selectedGender") private var selectedGender: String = ""
+    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
 
-    @State private var isInitialConditionsOn: Bool = false
+    let genders = ["Male", "Female"]
 
     var body: some View {
         NavigationView {
