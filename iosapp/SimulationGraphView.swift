@@ -3,6 +3,8 @@ import Charts
 
 struct SimulationGraphView: View {
     let result: ThyroidSimulationResult
+    let xZoom: CGFloat
+    let yZoom: CGFloat
 
     var body: some View {
         ScrollView {
@@ -19,7 +21,10 @@ struct SimulationGraphView: View {
                     xLabel: "Days",
                     values: result.time.indices.map { (result.time[$0], result.t4[$0]) },
                     color: .blue,
-                    yAxisRange: 0...100
+                    yAxisRange: dynamicRange(result.t4),
+                    xAxisRange: result.time.first!...result.time.last!,
+                    xZoom: xZoom,
+                    yZoom: yZoom
                 )
 
                 GraphSection(
@@ -28,7 +33,10 @@ struct SimulationGraphView: View {
                     xLabel: "Days",
                     values: result.time.indices.map { (result.time[$0], result.t3[$0]) },
                     color: .green,
-                    yAxisRange: 0...1.5
+                    yAxisRange: dynamicRange(result.t3),
+                    xAxisRange: result.time.first!...result.time.last!,
+                    xZoom: xZoom,
+                    yZoom: yZoom
                 )
 
                 GraphSection(
@@ -37,7 +45,10 @@ struct SimulationGraphView: View {
                     xLabel: "Days",
                     values: result.time.indices.map { (result.time[$0], result.tsh[$0]) },
                     color: .red,
-                    yAxisRange: 0...5
+                    yAxisRange: dynamicRange(result.tsh),
+                    xAxisRange: result.time.first!...result.time.last!,
+                    xZoom: xZoom,
+                    yZoom: yZoom
                 )
             }
             
@@ -52,64 +63,15 @@ struct SimulationGraphView: View {
                 }
             .padding()
         }
-        
-        
-        .background(Color.white.ignoresSafeArea()) // <-- White background!
+        .background(Color.white.ignoresSafeArea())
     }
-}
 
-struct GraphSection: View {
-    let title: String
-    let yLabel: String
-    let xLabel: String
-    let values: [(Double, Double)]
-    let color: Color
-    let yAxisRange: ClosedRange<Double>
-
-    @State private var yZoom: CGFloat = 1.0
-
-    var body: some View {
-        VStack(alignment: .leading) {
-            Text(title)
-                .foregroundColor(.black)
-                .font(.headline)
-
-            Chart {
-                ForEach(values, id: \.0) { time, value in
-                    LineMark(
-                        x: .value("Time", time),
-                        y: .value("Value", value)
-                    )
-                    .foregroundStyle(color)
-                    .interpolationMethod(.catmullRom)
-                }
-            }
-            .chartYScale(domain: scaledRange())
-            .chartXAxisLabel(xLabel)
-            .chartYAxisLabel(yLabel)
-            .chartXAxis {
-                AxisMarks(position: .bottom)
-            }
-            .chartYAxis {
-                AxisMarks(position: .leading)
-            }
-            .frame(height: 250)
-            .background(Color.white) // <-- Graph background white too
-            .cornerRadius(10)
-            .gesture(
-                MagnificationGesture()
-                    .onChanged { value in
-                        yZoom = value.magnitude
-                    }
-            )
-            .shadow(color: Color.gray.opacity(0.3), radius: 4, x: 0, y: 2) // optional subtle shadow
+    func dynamicRange(_ values: [Double]) -> ClosedRange<Double> {
+        guard let min = values.min(), let max = values.max(), max > min else {
+            return 0...1
         }
-    }
-
-    private func scaledRange() -> ClosedRange<Double> {
-        let center = (yAxisRange.lowerBound + yAxisRange.upperBound) / 2
-        let halfRange = (yAxisRange.upperBound - yAxisRange.lowerBound) / 2 / Double(yZoom)
-        return (center - halfRange)...(center + halfRange)
+        let buffer = (max - min) * 0.1
+        return (min - buffer)...(max + buffer)
     }
 }
 

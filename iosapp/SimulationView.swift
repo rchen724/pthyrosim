@@ -1,21 +1,15 @@
-//
-//  Page4View.swift
-//  biocyberneticsapp
-//
-//  Created by Shruthi Sathya on 4/15/25.
-//
-
-import Charts
 import SwiftUI
+import Charts
 
 struct SimulationView: View {
-    
+
     @AppStorage("t4Secretion") private var t4Secretion: String = "100"
     @AppStorage("t3Secretion") private var t3Secretion: String = "100"
-    @AppStorage("height") private var height: String = "1.65" // in meters
+    @AppStorage("height") private var height: String = "1.65"
     @AppStorage("weight") private var weight: String = "60"
     @AppStorage("selectedGender") private var gender: String = "Female"
     @AppStorage("simulationDays") private var simulationDays: String = "5"
+    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
 
     @State private var simResult: ThyroidSimulationResult? = nil
     @State private var navigateToGraph: Bool = false
@@ -23,8 +17,7 @@ struct SimulationView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea(edges: [.top, .horizontal]) // Keep bottom safe area for nav bar
-                
+                Color.black.ignoresSafeArea(edges: [.top, .horizontal])
                 VStack(spacing: 30) {
                     Text("Run Simulation")
                         .font(.title2)
@@ -32,23 +25,27 @@ struct SimulationView: View {
                         .foregroundColor(.white)
                         .padding(.top)
 
-                    // Image placeholder
                     Image("thyrosim")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxHeight: 350)
                         .padding(.horizontal)
-                    
+
+                    // Toggle for Initial Conditions
+                    Toggle(isOn: $isInitialConditionsOn) {
+                        Text("Recalculate Initial Conditions")
+                            .foregroundColor(.white)
+                    }
+                    .toggleStyle(SwitchToggleStyle(tint: .red))
+
                     // Simulation Button
                     Button(action: {
-                        print("Simulation Started")
                         guard let t4Sec = Double(t4Secretion),
                               let t3Sec = Double(t3Secretion),
                               let h = Double(height),
                               let w = Double(weight),
                               let d = Int(simulationDays),
-                              !gender.isEmpty
-                        else {
+                              !gender.isEmpty else {
                             print("Invalid input values")
                             return
                         }
@@ -60,7 +57,10 @@ struct SimulationView: View {
                             weight: w,
                             days: d
                         )
-                        let result = simulator.runSimulation()
+                        let result = simulator.runSimulation(
+                            recalculateIC: isInitialConditionsOn,
+                            logTSHOutput: false
+                        )
                         simResult = result
                         navigateToGraph = true
                     }) {
@@ -77,22 +77,15 @@ struct SimulationView: View {
                             )
                     }
 
-                    Spacer()
-                        .frame(height: 80)
+                    Spacer().frame(height: 80)
                 }
                 .padding()
             }
             .navigationDestination(isPresented: $navigateToGraph) {
                 if let result = simResult {
-                    SimulationGraphView(result: result)
+                    SimulationGraphView(result: result, xZoom: 1.0, yZoom: 1.0)
                 }
             }
         }
-    }
-}
-
-struct SimulationView_Previews: PreviewProvider {
-    static var previews: some View {
-        SimulationView()
     }
 }
