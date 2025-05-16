@@ -5,15 +5,30 @@ struct ThyrosimConstants {
     static let n: Double = 0.373
     static let CM: Double = 1.05
     static let base_k05: Double = 0.185
-    static let VPref: Double = 31.94
+    static let VPref: Double = 2.7749
     static let S4: Double = 0.00278
     static let S3: Double = 0.0015
-    static let kDegT4: Double = 0.05
+    static let T4: Double = 0.05
     static let kDegTSH: Double = 0.1
+    static let kDegT4: Double = 0.1
     static let B0: Double = 450.0
     static let A0: Double = 220.0
     static let Km: Double = 3.1
     static let m: Double = 6.3
+    static let Kf4: Double = 8.4
+    static let k3: Double = 0.0589
+    static let KCIRC: Double = 3.0
+    static let nHill: Double = 5.68
+
+    static let ft4_A = 0.000289
+    static let ft4_B = 0.000214
+    static let ft4_C = 0.000128
+    static let ft4_D = -0.00000883
+
+    static let ft3_a = 0.015
+    static let ft3_b = 0.002
+    static let ft3_c = -0.000015
+    static let ft3_d = 0.0000002
 }
 
 struct ThyroidPatientParams {
@@ -34,7 +49,7 @@ struct ThyroidPatientParams {
         let VP_new = 3.2 * VP / ThyrosimConstants.VPref
         let VTSH_new = 5.2 + (VP_new - 3.2)
 
-        let BWref = (sex == "Male") ? 90.63 : 77.47
+        let BWref = (sex == "Male") ? 67.528 : 64.145
         let k05_new = (sex == "Male")
             ? ThyrosimConstants.CM * ThyrosimConstants.base_k05 * pow(weight / BWref, 0.75)
             : ThyrosimConstants.base_k05 * pow(weight / BWref, 0.75)

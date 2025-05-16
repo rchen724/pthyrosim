@@ -8,7 +8,7 @@ struct SimulationView: View {
     @AppStorage("height") private var height: String = "1.65"
     @AppStorage("weight") private var weight: String = "60"
     @AppStorage("selectedGender") private var gender: String = "Female"
-    @AppStorage("simulationDays") private var simulationDays: String = "5"
+    @AppStorage("simulationDays") private var simulationDays: String = "5" // User input for days
     @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
 
     @State private var simResult: ThyroidSimulationResult? = nil
@@ -31,20 +31,18 @@ struct SimulationView: View {
                         .frame(maxHeight: 350)
                         .padding(.horizontal)
 
-                    // Toggle for Initial Conditions
                     Toggle(isOn: $isInitialConditionsOn) {
                         Text("Recalculate Initial Conditions")
                             .foregroundColor(.white)
                     }
                     .toggleStyle(SwitchToggleStyle(tint: .red))
 
-                    // Simulation Button
                     Button(action: {
                         guard let t4Sec = Double(t4Secretion),
                               let t3Sec = Double(t3Secretion),
                               let h = Double(height),
                               let w = Double(weight),
-                              let d = Int(simulationDays),
+                              let d = Int(simulationDays), // d is the number of days
                               !gender.isEmpty else {
                             print("Invalid input values")
                             return
@@ -82,8 +80,8 @@ struct SimulationView: View {
                 .padding()
             }
             .navigationDestination(isPresented: $navigateToGraph) {
-                if let result = simResult {
-                    SimulationGraphView(result: result, xZoom: 1.0, yZoom: 1.0)
+                if let result = simResult, let days = Int(simulationDays) { // Ensure days can be converted
+                    SimulationGraphView(result: result, simulationDurationDays: days) // Pass days here
                 }
             }
         }
