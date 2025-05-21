@@ -158,6 +158,10 @@ struct T3OralPopupView: View {
         let trimmedt3oralend = T3OralDoseEnd.trimmingCharacters(in: .whitespaces)
         let trimmedt3oralinterval = T3OralDoseInterval.trimmingCharacters(in: .whitespaces)
         
+        var singledose  = true
+        var t3_end: Float = 0
+        var t3_interval: Float = 0
+        
         guard !trimmedt3oralinput.isEmpty else {
             showError("Dosage is required.")
             return
@@ -189,6 +193,7 @@ struct T3OralPopupView: View {
                 showError("End time must be a valid number greater than 0.")
                 return
             }
+            t3_end = t3oralend
             
             guard !trimmedt3oralinterval.isEmpty else {
                 showError("Interval is required if not using single dose.")
@@ -199,13 +204,12 @@ struct T3OralPopupView: View {
                 showError("Interval must be a valid number greater than 0.")
                 return
             }
+            t3_interval = t3oralinterval
+            singledose = false
             
-            let newT3OralInput = T3OralDose(T3OralDoseInput: t3oraldose, T3OralDoseStart: t3oralstart, T3OralDoseEnd: 0, T3OralDoseInterval: 0, T3SingleDose: true)
-            onSave(newT3OralInput)
-            dismiss()
         }
 
-        let newT3OralInput = T3OralDose(T3OralDoseInput: t3oraldose, T3OralDoseStart: t3oralstart, T3OralDoseEnd: 0, T3OralDoseInterval: 0, T3SingleDose: true)
+        let newT3OralInput = T3OralDose(T3OralDoseInput: t3oraldose, T3OralDoseStart: t3oralstart, T3OralDoseEnd: t3_end, T3OralDoseInterval: t3_interval, T3SingleDose: singledose)
         // validated
         onSave(newT3OralInput)
         dismiss()
