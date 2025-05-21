@@ -159,6 +159,10 @@ struct T4OralPopupView: View {
         let trimmedt4oralend = T4OralDoseEnd.trimmingCharacters(in: .whitespaces)
         let trimmedt4oralinterval = T4OralDoseInterval.trimmingCharacters(in: .whitespaces)
         
+        var singledose = true
+        var t4_end: Float = 0
+        var t4_interval: Float = 0
+        
         guard !trimmedt4oralinput.isEmpty else {
             showError("Dosage is required.")
             return
@@ -190,6 +194,7 @@ struct T4OralPopupView: View {
                 showError("End time must be a valid number greater than 0.")
                 return
             }
+            t4_end = t4oralend
             
             guard !trimmedt4oralinterval.isEmpty else {
                 showError("Interval is required if not using single dose.")
@@ -201,12 +206,12 @@ struct T4OralPopupView: View {
                 return
             }
             
-            let newT4OralInput = T4OralDose(T4OralDoseInput: t4oraldose, T4OralDoseStart: t4oralstart, T4OralDoseEnd: 0, T4OralDoseInterval: 0, T4SingleDose: true)
-            onSave(newT4OralInput)
-            dismiss()
+            t4_interval = t4oralinterval
+            singledose = false
+            
         }
 
-        let newT4OralInput = T4OralDose(T4OralDoseInput: t4oraldose, T4OralDoseStart: t4oralstart, T4OralDoseEnd: 0, T4OralDoseInterval: 0, T4SingleDose: true)
+        let newT4OralInput = T4OralDose(T4OralDoseInput: t4oraldose, T4OralDoseStart: t4oralstart, T4OralDoseEnd: t4_end, T4OralDoseInterval: t4_interval, T4SingleDose: singledose)
         // validated
         onSave(newT4OralInput)
         dismiss()
