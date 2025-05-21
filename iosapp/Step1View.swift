@@ -1,10 +1,3 @@
-//
-//  Step1View.swift
-//  biocyberneticsapp
-//
-//  Created by Shruthi Sathya on 4/15/25.
-//
-
 import SwiftUI
 
 struct Step1View: View {
@@ -14,7 +7,7 @@ struct Step1View: View {
     @AppStorage("t3Absorption") private var t3Absorption: String = "88"
     @AppStorage("simulationDays") private var simulationDays: String = "5"
     @AppStorage("height") private var height: String = "1.68"
-    @AppStorage("weight") private var weight: String = "70"
+    @AppStorage("weight") private var weight: String = "91"
     @AppStorage("selectedGender") private var selectedGender: String = ""
     @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = ""
     @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = ""
@@ -51,7 +44,6 @@ struct Step1View: View {
                         Step1InputField(title: "Change T3 Secretion (0–125%)*", value: $t3Secretion)
                         Step1InputField(title: "Change T3 Absorption (0–100%)", value: $t3Absorption)
 
-                        // Gender Dropdown
                         VStack(alignment: .leading, spacing: 5) {
                             Text("Gender")
                                 .font(.callout)
@@ -131,7 +123,7 @@ struct Step1View: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .top)
             }
-            .background(Color.black.ignoresSafeArea()) // Full black background
+            .background(Color.black.ignoresSafeArea())
         }
     }
 }
