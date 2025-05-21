@@ -1,74 +1,124 @@
 //
-//  page3.swift
-//  biocyberneticsapp
+//  Step2.swift
+//  iosapp
 //
-//  Created by Shruthi Sathya on 4/15/25.
+//  Created by Rita Chen on 5/17/25.
 //
 
+import Foundation
 import SwiftUI
 
+struct T3OralDose: Identifiable {
+    let id = UUID()
+    let T3OralDoseInput: Float
+    let T3OralDoseStart: Float
+    let T3OralDoseEnd: Float
+    let T3OralDoseInterval: Float
+    let T3SingleDose: Bool
+}
+
+struct T3IVDose: Identifiable {
+    let id = UUID()
+    let T3IVDoseInput: Float
+    let T3IVDoseStart: Float
+}
+
+struct T3InfusionDose: Identifiable {
+    let id = UUID()
+    let T3InfusionDoseInput: Float
+    let T3InfusionDoseStart: Float
+    let T3InfusionDoseEnd: Float
+}
+
+struct T4OralDose: Identifiable {
+    let id = UUID()
+    let T4OralDoseInput: Float
+    let T4OralDoseStart: Float
+    let T4OralDoseEnd: Float
+    let T4OralDoseInterval: Float
+    let T4SingleDose: Bool
+}
+
+struct T4IVDose: Identifiable {
+    let id = UUID()
+    let T4IVDoseInput: Float
+    let T4IVDoseStart: Float
+}
+
+struct T4InfusionDose: Identifiable {
+    let id = UUID()
+    let T4InfusionDoseInput: Float
+    let T4InfusionDoseStart: Float
+    let T4InfusionDoseEnd: Float
+}
+
+enum ActivePopup: Identifiable {
+    case T3OralInputs
+    case T3IVInputs
+    case T3InfusionInputs
+    case T4OralInputs
+    case T4IVInputs
+    case T4InfusionInputs
+    
+    var id: Int {
+        hashValue
+    }
+}
+
 struct Step2View: View {
+    @State private var activePopup: ActivePopup? = nil
+    @State private var selectedT3input: T3OralDose? = nil
     
-    @State private var isT3Disabled = false
-    @State private var isT4Disabled = false
+    @State private var t3oralinputs: [T3OralDose] = []
+    @State private var t3ivinputs: [T3IVDose] = []
+    @State private var t3infusioninputs: [T3InfusionDose] = []
     
-    //T3 Oral Dose Inputs
-    @State private var showT3OralDose = false
-    @AppStorage("T3OralDoseInput") private var T3OralDoseInput: String = ""
-    @AppStorage("T3OralDoseStart") private var T3OralDoseStart: String = ""
-    @AppStorage("T3OralDoseEnd") private var T3OralDoseEnd: String = ""
-    @AppStorage("T3OralDoseInterval") private var T3OralDoseInterval: String = ""
+    @State private var t4oralinputs: [T4OralDose] = []
+    @State private var t4ivinputs: [T4IVDose] = []
+    @State private var t4infusioninputs: [T4InfusionDose] = []
     
-    //T3 IV Dose Inputs
-    @State private var showT3IVDose = false
-    @AppStorage("T3IVDoseInput") private var T3IVDoseInput: String = ""
-    @AppStorage("T3IVDoseStart") private var T3IVDoseStart: String = ""
+    var enumeratedT3Oral: [(Int, T3OralDose)] {
+        Array(t3oralinputs.enumerated())
+    }
     
-    //T3 Infusion Dose Inputs
-    @State private var showT3InfusionDose = false
-    @AppStorage("T3InfusionDoseInput") private var T3InfusionDoseInput: String = ""
-    @AppStorage("T3InfusionDoseStart") private var T3InfusionDoseStart: String = ""
-    @AppStorage("T3InfusionDoseEnd") private var T3InfusionDoseEnd: String = ""
+    var enumeratedT3IV: [(Int, T3IVDose)] {
+        Array(t3ivinputs.enumerated())
+    }
     
-    //T4 Oral Dose Inputs
-    @State private var showT4OralDose = false
-    @AppStorage("T4OralDoseInput") private var T4OralDoseInput: String = ""
-    @AppStorage("T4OralDoseStart") private var T4OralDoseStart: String = ""
-    @AppStorage("T4OralDoseEnd") private var T4OralDoseEnd: String = ""
-    @AppStorage("T4OralDoseInterval") private var T4OralDoseInterval: String = ""
+    var enumeratedT3Infusion: [(Int, T3InfusionDose)] {
+        Array(t3infusioninputs.enumerated())
+    }
     
-    //T4 IV dose Inputs
-    @State private var showT4IVDose = false
-    @AppStorage("T4IVDoseInput") private var T4IVDoseInput: String = ""
-    @AppStorage("T4IVDoseStart") private var T4IVDoseStart: String = ""
+    var enumeratedT4Oral: [(Int, T4OralDose)] {
+        Array(t4oralinputs.enumerated())
+    }
     
-    //T4 Infusion Dose Inputs
-    @State private var showT4InfusionDose = false
-    @AppStorage("T4InfusionDoseInput") private var T4InfusionDoseInput: String = ""
-    @AppStorage("T4InfusionDoseStart") private var T4InfusionDoseStart: String = ""
-    @AppStorage("T4InfusionDoseEnd") private var T4InfusionDoseEnd: String = ""
+    var enumeratedT4IV: [(Int, T4IVDose)] {
+        Array(t4ivinputs.enumerated())
+    }
+    
+    var enumeratedT4Infusion: [(Int, T4InfusionDose)] {
+        Array(t4infusioninputs.enumerated())
+    }
     
     var body: some View {
-        ZStack {
-            Color.black
-                .ignoresSafeArea(edges: [.top, .horizontal]) // Respect bottom safe area
-
+        ZStack{
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     Text("Do Simulated Dosing Experiment")
                         .font(.title2.bold())
-
+                    
                     Text("How: T3 and/or T4 input dosing can be chosen as oral doses; OR intravenous (IV) bolus doses; OR infusion doses.")
                         .font(.body)
                         .foregroundColor(.gray)
-
+                    
                     HStack(alignment: .top, spacing: 40) {
                         VStack(alignment: .center, spacing: 16) {
                             Text("T3 Input:")
                                 .font(.headline)
                             VStack(spacing: 12) {
                                 Button(action: {
-                                    showT3OralDose.toggle()
+                                    activePopup = .T3OralInputs
                                   }) {
                                       VStack{
                                           Image("pill1")
@@ -76,7 +126,7 @@ struct Step2View: View {
                                       }
                                   }
                                 Button(action: {
-                                    showT3IVDose.toggle()
+                                    activePopup = .T3IVInputs
                                   }) {
                                       VStack{
                                           Image("syringe1")
@@ -84,7 +134,7 @@ struct Step2View: View {
                                       }
                                   }
                                 Button(action: {
-                                    showT3InfusionDose.toggle()
+                                    activePopup = .T3InfusionInputs
                                   }) {
                                       VStack{
                                           Image("infusion1")
@@ -93,13 +143,13 @@ struct Step2View: View {
                                   }
                              }
                         }
-
+                        
                         VStack(alignment: .center, spacing: 16) {
                             Text("T4 Input:")
                                 .font(.headline)
                             VStack(spacing: 12) {
                                 Button(action: {
-                                    showT4OralDose.toggle()
+                                    activePopup = .T4OralInputs
                                   }) {
                                       VStack{
                                           Image("pill2")
@@ -107,7 +157,7 @@ struct Step2View: View {
                                       }
                                   }
                                 Button(action: {
-                                    showT4IVDose.toggle()
+                                    activePopup = .T4IVInputs
                                   }) {
                                       VStack{
                                           Image("syringe2")
@@ -115,7 +165,7 @@ struct Step2View: View {
                                       }
                                   }
                                 Button(action: {
-                                    showT4InfusionDose.toggle()
+                                    activePopup = .T4InfusionInputs
                                   }) {
                                       VStack{
                                           Image("infusion2")
@@ -126,7 +176,7 @@ struct Step2View: View {
                             }
                         }
                     }
-
+                    
                     Text("What: Combinations of T3 and T4 can be added as dosage inputs at different times and types.")
                         .font(.body)
                         .foregroundColor(.gray)
@@ -150,336 +200,282 @@ struct Step2View: View {
                     }
                     .padding()
                     
-                    //Each input
-                    
-                    VStack(alignment: .trailing, spacing: 12){
-                        //T3OralDose
-                        if showT3OralDose {
-                            HStack(alignment:.center, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 20) {
-                                    HStack(alignment: .center, spacing: 10)
-                                    {
-                                        Image("pill1")
-                                            .resizable()
-                                            .frame(width: 30, height: 30)
-                                        Text("T3-ORAL DOSE")
-                                            .font(.title3.bold())
-                                    }
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack(alignment: .center, spacing: nil) {
-                                            Text("Dose (µg)")
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                            Step2InputField(title: "", value: $T3OralDoseInput)
-                                                .multilineTextAlignment(.trailing)
-                                        }
-                                        
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Dose Start Day or Time")
-                                            Step2InputField(title: "", value: $T3OralDoseStart)
-                                        }
-                                       
-                                        Spacer()
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Use Single Dose")
-                                            Spacer()
-                                            Toggle("turn off", isOn: $isT3Disabled)
-                                                .labelsHidden()
-                                                .toggleStyle(SwitchToggleStyle(tint: .white))
-                                            Spacer()
-                                        }
-                                        
-
-                                        if !isT3Disabled {
-                                            HStack(alignment: .center, spacing: 10) {
-                                                VStack(alignment: .leading, spacing: 10) {
-                                                    Text("Dose End Day or Time")
-                                                    Text("E.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
-                                                        .font(.caption)
-                                                        .foregroundColor(.gray)
-                                                }
-                                                Step2InputField(title: "", value: $T3OralDoseEnd)
-                                            }
-                                            HStack(alignment: .center, spacing: 10) {
-                                                VStack(alignment: .leading, spacing: 10) {
-                                                    Text("Dosing Interval (days)")
-                                                    Text("E.g. 1, if daily dosing, 0.5 if twice-daily dosing, etc")
-                                                        .font(.caption)
-                                                        .foregroundColor(.gray)
-                                                }
-                                                Step2InputField(title: "", value: $T3OralDoseInterval)
-                                        }
-                                    }
-                                    }
-                                }
-                                Button(action: {
-                                    showT3OralDose.toggle()
-                                  }) {
-                                      VStack{
-                                          Image("delete")
-                                      }
-                                  }
-                                .padding(.bottom)
-                            }
-                            .padding()
-                        }
+                
+                    if !t3oralinputs.isEmpty {
                         
-                        //T3IV Dose
-                        if showT3IVDose {
-                            HStack(alignment:.center, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 20) {
-                                    HStack(alignment: .center, spacing: 10)
-                                    {
-                                        Image("syringe1")
-                                            .resizable()
-                                            .frame(width: 30, height: 30)
-                                        Text("T3-IV DOSE")
+                        Section(header:                                     HStack(alignment: .center, spacing: 10)
+                                {
+                            Image("pill1")
+                                .resizable()
+                                .frame(width: 30, height: 30)
+                            Text("T3-ORAL DOSE")
+                                .font(.title2.bold())
+                        }) {
+                            ForEach(enumeratedT3Oral, id: \.1.id) { index, t3oral in
+                                HStack(alignment: .center){
+                                    VStack(alignment: .leading){
+                                        Text("Input \(index + 1):")
                                             .font(.title3.bold())
-                                    }
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack(alignment: .center, spacing: nil) {
-                                            Text("Dose (µg)")
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                            Step2InputField(title: "", value: $T3IVDoseInput)
-                                                .multilineTextAlignment(.trailing)
-                                        }
-                                        
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Dose Start Day or Time")
-                                            Step2InputField(title: "", value: $T3IVDoseStart)
+                                        Text("Dose (µg): \(String(format: "%.2f", t3oral.T3OralDoseInput))")
+                                        Text("Dose Start Day or Time: \(String(format: "%.2f", t3oral.T3OralDoseStart))")
+                                        if !t3oral.T3SingleDose {
+                                            Text("Dose End Day or Time: \(String(format: "%.2f", t3oral.T3OralDoseEnd))")
+                                            Text("Dosing Interval (days): \(String(format: "%.2f", t3oral.T3OralDoseInterval))")
                                         }
                                     }
-                                }
-                                Button(action: {
-                                    showT3IVDose.toggle()
-                                  }) {
-                                      VStack{
-                                          Image("delete")
-                                      }
-                                  }
-                                .padding(.bottom)
-                            }
-                            .padding()
-                        }
-                        
-                        //T3 Infusion Dose
-                        if showT3InfusionDose {
-                            HStack(alignment:.center, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 20) {
-                                    HStack(alignment: .center, spacing: 10)
-                                    {
-                                        Image("infusion1")
+                                    Spacer()
+                                    Button(action: {
+                                        if let index = t3oralinputs.firstIndex(where: { $0.id == t3oral.id }) {
+                                            t3oralinputs.remove(at: index)
+                                        }
+                                    }) {
+                                        Image("delete")
                                             .resizable()
+                                            .scaledToFit()
                                             .frame(width: 30, height: 30)
-                                        Text("T3-INFUSION DOSE")
-                                            .font(.title3.bold())
                                     }
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack(alignment: .center, spacing: nil) {
-                                            Text("Dose (µg)")
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                            Step2InputField(title: "", value: $T3InfusionDoseInput)
-                                                .multilineTextAlignment(.trailing)
-                                        }
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Dose Start Day or Time")
-                                            Step2InputField(title: "", value: $T3InfusionDoseStart)
-                                        }
-                                        HStack(alignment: .center, spacing: 10) {
-                                            VStack(alignment: .leading, spacing: 10) {
-                                                Text("Dose End Day or Time")
-                                                Text("E.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
-                                                    .font(.caption)
-                                                    .foregroundColor(.gray)
-                                            }
-                                                Step2InputField(title: "", value: $T3InfusionDoseEnd)
-                                        }
-                                    }
+                                    
                                 }
-                                Button(action: {
-                                    showT3InfusionDose.toggle()
-                                  }) {
-                                      VStack{
-                                          Image("delete")
-                                      }
-                                  }
-                                .padding(.bottom)
                             }
-                            .padding()
-                        }
-                        
-                        //T4 Oral Dose
-                        if showT4OralDose {
-                            HStack(alignment:.center, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 20) {
-                                    HStack(alignment: .center, spacing: 10)
-                                    {
-                                        Image("pill2")
-                                            .resizable()
-                                            .frame(width: 30, height: 30)
-                                        Text("T4-ORAL DOSE")
-                                            .font(.title3.bold())
-                                    }
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack(alignment: .center, spacing: nil) {
-                                            Text("Dose (µg)")
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                            Step2InputField(title: "", value: $T4OralDoseInput)
-                                                .multilineTextAlignment(.trailing)
-                                        }
-                                        
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Dose Start Day or Time")
-                                            Step2InputField(title: "", value: $T4OralDoseStart)
-                                        }
-                                       
-                                        Spacer()
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Use Single Dose")
-                                            Spacer()
-                                            Toggle("turn off", isOn: $isT4Disabled)
-                                                .labelsHidden()
-                                                .toggleStyle(SwitchToggleStyle(tint: .white))
-                                            Spacer()
-                                        }
-                                        
-                                        if !isT3Disabled {
-                                            HStack(alignment: .center, spacing: 10) {
-                                                VStack(alignment: .leading, spacing: 10) {
-                                                    Text("Dose End Day or Time")
-                                                    Text("E.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
-                                                        .font(.caption)
-                                                        .foregroundColor(.gray)
-                                                }
-                                                Step2InputField(title: "", value: $T4OralDoseEnd)
-                                            }
-                                            HStack(alignment: .center, spacing: 10) {
-                                                VStack(alignment: .leading, spacing: 10) {
-                                                    Text("Dosing Interval (days)")
-                                                    Text("E.g. 1, if daily dosing, 0.5 if twice-daily dosing, etc")
-                                                        .font(.caption)
-                                                        .foregroundColor(.gray)
-                                                }
-                                                Step2InputField(title: "", value: $T4OralDoseInterval)
-                                        }
-                                    }
-                                    }
-                                }
-                                Button(action: {
-                                    showT4OralDose.toggle()
-                                  }) {
-                                      VStack{
-                                          Image("delete")
-                                      }
-                                  }
-                                .padding(.bottom)
-                            }
-                            .padding()
-                        }
-                        
-                        //T4IV Dose
-                        if showT4IVDose {
-                            HStack(alignment:.center, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 20) {
-                                    HStack(alignment: .center, spacing: 10)
-                                    {
-                                        Image("syringe2")
-                                            .resizable()
-                                            .frame(width: 30, height: 30)
-                                        Text("T4-IV DOSE")
-                                            .font(.title3.bold())
-                                    }
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack(alignment: .center, spacing: nil) {
-                                            Text("Dose (µg)")
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                            Step2InputField(title: "", value: $T4IVDoseInput)
-                                                .multilineTextAlignment(.trailing)
-                                        }
-                                        
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Dose Start Day or Time")
-                                            Step2InputField(title: "", value: $T4IVDoseStart)
-                                        }
-                                    }
-                                }
-                                Button(action: {
-                                    showT4IVDose.toggle()
-                                  }) {
-                                      VStack{
-                                          Image("delete")
-                                      }
-                                  }
-                                .padding(.bottom)
-                            }
-                            .padding()
-                        }
-                        
-                        //T4 Infusion Dose
-                        if showT4InfusionDose {
-                            HStack(alignment:.center, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 20) {
-                                    HStack(alignment: .center, spacing: 10)
-                                    {
-                                        Image("infusion2")
-                                            .resizable()
-                                            .frame(width: 30, height: 30)
-                                        Text("T4-INFUSION DOSE")
-                                            .font(.title3.bold())
-                                    }
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack(alignment: .center, spacing: nil) {
-                                            Text("Dose (µg)")
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                            Step2InputField(title: "", value: $T4InfusionDoseInput)
-                                                .multilineTextAlignment(.trailing)
-                                        }
-                                        
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Dose Start Day or Time")
-                                            Step2InputField(title: "", value: $T4InfusionDoseStart)
-                                        }
-                                        
-                                        HStack(alignment: .center, spacing: 10) {
-                                            VStack(alignment: .leading, spacing: 10) {
-                                                Text("Dose End Day or Time")
-                                                Text("E.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
-                                                    .font(.caption)
-                                                    .foregroundColor(.gray)
-                                            }
-                                                Step2InputField(title: "", value: $T4InfusionDoseEnd)
-                                        }
-                                    }
-                                }
-                                Button(action: {
-                                    showT4InfusionDose.toggle()
-                                  }) {
-                                      VStack{
-                                          Image("delete")
-                                      }
-                                  }
-                                .padding(.bottom)
-                            }
-                            .padding()
                         }
                     }
-                    Spacer().frame(height: 80) // Leave space for navigation bar
+                    
+                    if !t3ivinputs.isEmpty {
+                        Section(header:                                     HStack(alignment: .center, spacing: 10)
+                                {
+                            Image("syringe1")
+                                .resizable()
+                                .frame(width: 30, height: 30)
+                            Text("T3-IV DOSE")
+                                .font(.title2.bold())
+                        }) {
+                            ForEach(enumeratedT3IV, id: \.1.id) { index, t3iv in
+                                HStack(alignment: .center){
+                                    VStack(alignment: .leading){
+                                        Text("Input \(index + 1):")
+                                            .font(.title3.bold())
+                                        Text("Dose (µg): \(String(format: "%.2f", t3iv.T3IVDoseInput))")
+                                        Text("Dose Start Day or Time: \(String(format: "%.2f", t3iv.T3IVDoseStart))")
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        if let index = t3ivinputs.firstIndex(where: { $0.id == t3iv.id }) {
+                                            t3ivinputs.remove(at: index)
+                                        }
+                                    }) {
+                                        Image("delete")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 30, height: 30)
+                                    }
+                                    
+                                }
+                                
+                            }
+                        }
+                    }
+                    
+                    if !t3infusioninputs.isEmpty {
+                        Section(header:                                     HStack(alignment: .center, spacing: 10)
+                                {
+                                    Image("infusion1")
+                                        .resizable()
+                                        .frame(width: 30, height: 30)
+                                    Text("T3-INFUSION DOSE")
+                                        .font(.title3.bold())
+                                }) {
+                            ForEach(enumeratedT3Infusion, id: \.1.id) { index, t3infusion in
+                                HStack(alignment: .center){
+                                    VStack(alignment: .leading){
+                                        Text("Input \(index + 1):")
+                                            .font(.title3.bold())
+                                        Text("Dose (µg): \(String(format: "%.2f", t3infusion.T3InfusionDoseInput))")
+                                        Text("Dose Start Day or Time: \(String(format: "%.2f", t3infusion.T3InfusionDoseStart))")
+                                        Text("Dose End Day or Time: \(String(format: "%.2f", t3infusion.T3InfusionDoseEnd))")
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        if let index = t3infusioninputs.firstIndex(where: { $0.id == t3infusion.id }) {
+                                            t3infusioninputs.remove(at: index)
+                                        }
+                                    }) {
+                                        Image("delete")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 30, height: 30)
+                                        
+                                    }
+                                    
+                                }
+                            }
+                        }
+                    }
+                    
+                    //T4
+                    if !t4oralinputs.isEmpty {
+                        
+                        Section(header:                                     HStack(alignment: .center, spacing: 10)
+                                {
+                            Image("pill2")
+                                .resizable()
+                                .frame(width: 30, height: 30)
+                            Text("T4-ORAL DOSE")
+                                .font(.title2.bold())
+                        }) {
+                            ForEach(enumeratedT4Oral, id: \.1.id) { index, t4oral in
+                                HStack(alignment: .center){
+                                    VStack(alignment: .leading){
+                                        Text("Input \(index + 1):")
+                                            .font(.title3.bold())
+                                        Text("Dose (µg): \(String(format: "%.2f", t4oral.T4OralDoseInput))")
+                                        Text("Dose Start Day or Time: \(String(format: "%.2f", t4oral.T4OralDoseStart))")
+                                        if !t4oral.T4SingleDose {
+                                            Text("Dose End Day or Time: \(String(format: "%.2f", t4oral.T4OralDoseEnd))")
+                                            Text("Dosing Interval (days): \(String(format: "%.2f", t4oral.T4OralDoseInterval))")
+                                        }
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        if let index = t4oralinputs.firstIndex(where: { $0.id == t4oral.id }) {
+                                            t4oralinputs.remove(at: index)
+                                        }
+                                    }) {
+                                        Image("delete")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 30, height: 30)
+                                    }
+                                    
+                                }
+                            }
+                        }
+                    }
+                    
+                    if !t4ivinputs.isEmpty {
+                        Section(header:                                     HStack(alignment: .center, spacing: 10)
+                                {
+                            Image("syringe2")
+                                .resizable()
+                                .frame(width: 30, height: 30)
+                            Text("T4-IV DOSE")
+                                .font(.title2.bold())
+                        }) {
+                            ForEach(enumeratedT4IV, id: \.1.id) { index, t4iv in
+                                HStack(alignment: .center){
+                                    VStack(alignment: .leading){
+                                        Text("Input \(index + 1):")
+                                            .font(.title3.bold())
+                                        Text("Dose (µg): \(String(format: "%.2f", t4iv.T4IVDoseInput))")
+                                        Text("Dose Start Day or Time: \(String(format: "%.2f", t4iv.T4IVDoseStart))")
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        if let index = t4ivinputs.firstIndex(where: { $0.id == t4iv.id }) {
+                                            t4ivinputs.remove(at: index)
+                                        }
+                                    }) {
+                                        Image("delete")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 30, height: 30)
+                                    }
+                                    
+                                }
+                                
+                            }
+                        }
+                    }
+                    
+                    if !t4infusioninputs.isEmpty {
+                        Section(header:                                     HStack(alignment: .center, spacing: 10)
+                                {
+                                    Image("infusion2")
+                                        .resizable()
+                                        .frame(width: 30, height: 30)
+                                    Text("T4-INFUSION DOSE")
+                                        .font(.title3.bold())
+                                }) {
+                            ForEach(enumeratedT4Infusion, id: \.1.id) { index, t4infusion in
+                                HStack(alignment: .center){
+                                    VStack(alignment: .leading){
+                                        Text("Input \(index + 1):")
+                                            .font(.title3.bold())
+                                        Text("Dose (µg): \(String(format: "%.2f", t4infusion.T4InfusionDoseInput))")
+                                        Text("Dose Start Day or Time: \(String(format: "%.2f", t4infusion.T4InfusionDoseStart))")
+                                        Text("Dose End Day or Time: \(String(format: "%.2f", t4infusion.T4InfusionDoseEnd))")
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        if let index = t4infusioninputs.firstIndex(where: { $0.id == t4infusion.id }) {
+                                            t4infusioninputs.remove(at: index)
+                                        }
+                                    }) {
+                                        Image("delete")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 30, height: 30)
+                                        
+                                    }
+                                    
+                                }
+                            }
+                        }
+                    }
+                    Spacer().frame(height: 80)
                 }
                 .padding()
                 .foregroundColor(.white)
             }
-        }
-    }
-}
 
-struct Step2View_Previews: PreviewProvider {
-    static var previews: some View {
-        Step2View()
+        }
+        .background(Color.black.ignoresSafeArea())
+        .padding()
+        .sheet(item: $activePopup) { popup in
+            switch popup {
+            case .T3OralInputs:
+                T3OralPopupView { newT3Oral in
+                    t3oralinputs.append(newT3Oral)
+                    activePopup = nil
+                }
+            case .T3IVInputs:
+                T3IVPopupView { newT3IV in
+                    t3ivinputs.append(newT3IV)
+                    activePopup = nil
+                }
+            case .T3InfusionInputs:
+                T3InfusionPopupView { newT3Infusion in
+                    t3infusioninputs.append(newT3Infusion)
+                    activePopup = nil
+                }
+                
+            case .T4OralInputs:
+                T4OralPopupView { newT4Oral in
+                    t4oralinputs.append(newT4Oral)
+                    activePopup = nil
+                }
+            case .T4IVInputs:
+                T4IVPopupView { newT4IV in
+                    t4ivinputs.append(newT4IV)
+                    activePopup = nil
+                }
+            case .T4InfusionInputs:
+                T4InfusionPopupView { newT4Infusion in
+                    t4infusioninputs.append(newT4Infusion)
+                    activePopup = nil
+                }
+                
+            }
+            
+        }
+        .background(Color.black.ignoresSafeArea())
+    
     }
 }
 
 struct Step2InputField: View {
     var title: String
     @Binding var value: String
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 5) {
@@ -487,13 +483,14 @@ struct Step2InputField: View {
                 .font(.callout)
                 .foregroundColor(.white)
             TextField("", text: $value)
-                .frame(width: 100)
+                .frame(width: 100, alignment: .trailing)
                 .padding(10)
-                .background(Color.white.opacity(0.1))
+                .background(Color.black.opacity(0.1))
                 .cornerRadius(8)
-                .foregroundColor(.white)
+                .foregroundColor(.black)
                 .fixedSize(horizontal:true, vertical: true)
         }
         .padding(.horizontal)
     }
 }
+

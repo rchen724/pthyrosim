@@ -9,9 +9,13 @@ struct Step1View: View {
     @AppStorage("height") private var height: String = "1.68"
     @AppStorage("weight") private var weight: String = "91"
     @AppStorage("selectedGender") private var selectedGender: String = ""
+    @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = ""
+    @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = ""
     @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
 
     let genders = ["Male", "Female"]
+    let heightUnits = ["in", "cm"]
+    let weightUnits = ["kg", "lbs"]
 
     var body: some View {
         NavigationView {
@@ -58,8 +62,38 @@ struct Step1View: View {
                             .foregroundColor(.white)
                         }
                         .padding(.horizontal)
-
-                        Step1InputField(title: "Height", value: $height)
+                        
+                        HStack(alignment: .center){
+                            Step1InputField(title: "Height", value: $height)
+                            Spacer()
+                            Picker("", selection: $selectedHeightUnit) {
+                                ForEach(heightUnits, id: \.self) { height in
+                                    Text(height)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(8)
+                            .foregroundColor(.white)
+                        }
+                        HStack(alignment: .center){
+                            Step1InputField(title: "Weight", value: $weight)
+                            Spacer()
+                            Picker("", selection: $selectedWeightUnit) {
+                                ForEach(weightUnits, id: \.self) { weight in
+                                    Text(weight)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(8)
+                            .foregroundColor(.white)
+                        }
+                        
                         Step1InputField(title: "Weight", value: $weight)
                         Step1InputField(title: "Simulation Interval (days <= 100)", value: $simulationDays)
                     }
