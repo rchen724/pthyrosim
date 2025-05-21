@@ -42,76 +42,118 @@ struct SimulationGraphView: View {
                 .toggleStyle(SwitchToggleStyle(tint: .blue))
             }
 
-            .chartYScale(domain: scaledRange())
-            .chartXAxisLabel(xLabel)
-            .chartYAxisLabel(yLabel)
-            .chartXAxis {
-                AxisMarks(position: .bottom)
-            }
-            .chartYAxis {
-                AxisMarks(position: .leading)
-            }
-            .frame(height: 250)
-            .background(Color.white) // <-- Graph background white too
-            .cornerRadius(10)
-            .gesture(
-                MagnificationGesture()
-                    .onChanged { value in
-                        yZoom = value.magnitude
-                    }
+            GraphSection(
+                title: showFreeHormones ? "Free T4" : "T4",
+                yLabel: showFreeHormones ? "FT4 (µg/L)" : "T4 (µg/L)",
+                xLabel: "Days",
+                values: result.time.indices.map {
+                    (result.time[$0], showFreeHormones ? result.ft4[$0] : result.t4[$0])
+                },
+                color: showFreeHormones ? .purple : .blue,
+                yAxisRange: dynamicRange(showFreeHormones ? result.ft4 : result.t4),
+                xAxisRange: effectiveXAxisRange // Use the calculated effective range
             )
-            .shadow(color: Color.gray.opacity(0.3), radius: 4, x: 0, y: 2) // optional subtle shadow
+            .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
+
+            GraphSection(
+                title: showFreeHormones ? "Free T3" : "T3",
+                yLabel: showFreeHormones ? "FT3 (µg/L)" : "T3 (µg/L)",
+                xLabel: "Days",
+                values: result.time.indices.map {
+                    (result.time[$0], showFreeHormones ? result.ft3[$0] : result.t3[$0])
+                },
+                color: showFreeHormones ? .orange : .green,
+                yAxisRange: dynamicRange(showFreeHormones ? result.ft3 : result.t3),
+                xAxisRange: effectiveXAxisRange // Use the calculated effective range
+            )
+            .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
+
+            GraphSection(
+                title: "TSH",
+                yLabel: "TSH (mU/L)",
+                xLabel: "Days",
+                values: result.time.indices.map { (result.time[$0], result.tsh[$0]) },
+                color: .red,
+                yAxisRange: dynamicRange(result.tsh),
+                xAxisRange: effectiveXAxisRange // Use the calculated effective range
+            )
+            .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
+
         }
+        .navigationTitle("Simulation Results")
+        .listStyle(.plain)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: Run2View()) {
+                    Text("Run 2")
+                }
+            }
+        }
+        
     }
 
-    private func scaledRange() -> ClosedRange<Double> {
-        let center = (yAxisRange.lowerBound + yAxisRange.upperBound) / 2
-        let halfRange = (yAxisRange.upperBound - yAxisRange.lowerBound) / 2 / Double(yZoom)
-        return (center - halfRange)...(center + halfRange)
+    func dynamicRange(_ values: [Double]) -> ClosedRange<Double> {
+        guard let minVal = values.min(), let maxVal = values.max(), minVal <= maxVal else {
+            let defaultVal = values.first ?? 0.0
+            return (defaultVal - 1)...(defaultVal + 1) // Provide a default range if data is empty or constant
+        }
+        if minVal == maxVal { // Handle constant data
+            return (minVal - 1)...(maxVal + 1)
+        }
+        // Add a small buffer (e.g., 10%) to min and max for better visibility
+        let buffer = (maxVal - minVal) * 0.1
+        let effectiveBuffer = buffer > 0 ? buffer : 1.0 // Ensure buffer is not zero
+        
+        let lower = minVal - effectiveBuffer
+        let upper = maxVal + effectiveBuffer
+        // For hormone values, often good to ensure lower bound doesn't go significantly below zero if data is non-negative.
+        // However, if minVal itself is negative, allow negative lower bound.
+        return (minVal >= 0 && lower < 0 ? 0 : lower)...upper
     }
 }
+
 
 struct Run2View: View {
     @State private var activePopup: ActivePopup? = nil
     @State private var selectedT3input: T3OralDose? = nil
     
-    @State private var run2t3oralinputs: [T3OralDose] = []
-    @State private var run2t3ivinputs: [T3IVDose] = []
-    @State private var run2t3infusioninputs: [T3InfusionDose] = []
+    @State private var run2_t3oralinputs: [T3OralDose] = []
+    @State private var run2_t3ivinputs: [T3IVDose] = []
+    @State private var run2_t3infusioninputs: [T3InfusionDose] = []
     
-    @State private var run2t4oralinputs: [T4OralDose] = []
-    @State private var run2t4ivinputs: [T4IVDose] = []
-    @State private var run2t4infusioninputs: [T4InfusionDose] = []
+    @State private var run2_t4oralinputs: [T4OralDose] = []
+    @State private var run2_t4ivinputs: [T4IVDose] = []
+    @State private var run2_t4infusioninputs: [T4InfusionDose] = []
     
     var enumeratedT3Oral: [(Int, T3OralDose)] {
-        Array(run2t3oralinputs.enumerated())
+        Array(run2_t3oralinputs.enumerated())
     }
     
     var enumeratedT3IV: [(Int, T3IVDose)] {
-        Array(run2t3ivinputs.enumerated())
+        Array(run2_t3ivinputs.enumerated())
     }
     
     var enumeratedT3Infusion: [(Int, T3InfusionDose)] {
-        Array(run2t3infusioninputs.enumerated())
+        Array(run2_t3infusioninputs.enumerated())
     }
     
     var enumeratedT4Oral: [(Int, T4OralDose)] {
-        Array(run2t4oralinputs.enumerated())
+        Array(run2_t4oralinputs.enumerated())
     }
     
     var enumeratedT4IV: [(Int, T4IVDose)] {
-        Array(run2t4ivinputs.enumerated())
+        Array(run2_t4ivinputs.enumerated())
     }
     
     var enumeratedT4Infusion: [(Int, T4InfusionDose)] {
-        Array(run2t4infusioninputs.enumerated())
+        Array(run2_t4infusioninputs.enumerated())
     }
     
     var body: some View {
         ZStack{
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    Text("Adjust Simulated Dosing Experiment for RUN 2")
+                    Text("Adjust Dose Quantity & Freqnecy for RUN 2")
                         .font(.title2.bold())
                     
                     HStack(alignment: .top, spacing: 40) {
@@ -179,12 +221,12 @@ struct Run2View: View {
                         }
                     }
                     
-                    Text("Click the above icons to add as input, which can be any combination of T3 and T4. Results will be superimposed on Run 1 Simulation")
+                    Text("Click the avbove icons to add as input, which can be any combination of T3 and T4. Results will be superimposed on Run 1 simulation")
                         .font(.body)
                         .foregroundColor(.gray)
 
-    
-                    if !run2t3oralinputs.isEmpty {
+                
+                    if !run2_t3oralinputs.isEmpty {
                         
                         Section(header:                                     HStack(alignment: .center, spacing: 10)
                                 {
@@ -208,8 +250,8 @@ struct Run2View: View {
                                     }
                                     Spacer()
                                     Button(action: {
-                                        if let index = run2t3oralinputs.firstIndex(where: { $0.id == t3oral.id }) {
-                                            run2t3oralinputs.remove(at: index)
+                                        if let index = run2_t3oralinputs.firstIndex(where: { $0.id == t3oral.id }) {
+                                            run2_t3oralinputs.remove(at: index)
                                         }
                                     }) {
                                         Image("delete")
@@ -223,7 +265,7 @@ struct Run2View: View {
                         }
                     }
                     
-                    if !run2t3ivinputs.isEmpty {
+                    if !run2_t3ivinputs.isEmpty {
                         Section(header:                                     HStack(alignment: .center, spacing: 10)
                                 {
                             Image("syringe1")
@@ -242,8 +284,8 @@ struct Run2View: View {
                                     }
                                     Spacer()
                                     Button(action: {
-                                        if let index = run2t3ivinputs.firstIndex(where: { $0.id == t3iv.id }) {
-                                            run2t3ivinputs.remove(at: index)
+                                        if let index = run2_t3ivinputs.firstIndex(where: { $0.id == t3iv.id }) {
+                                            run2_t3ivinputs.remove(at: index)
                                         }
                                     }) {
                                         Image("delete")
@@ -258,7 +300,7 @@ struct Run2View: View {
                         }
                     }
                     
-                    if !run2t3infusioninputs.isEmpty {
+                    if !run2_t3infusioninputs.isEmpty {
                         Section(header:                                     HStack(alignment: .center, spacing: 10)
                                 {
                                     Image("infusion1")
@@ -278,8 +320,8 @@ struct Run2View: View {
                                     }
                                     Spacer()
                                     Button(action: {
-                                        if let index = run2t3infusioninputs.firstIndex(where: { $0.id == t3infusion.id }) {
-                                            run2t3infusioninputs.remove(at: index)
+                                        if let index = run2_t3infusioninputs.firstIndex(where: { $0.id == t3infusion.id }) {
+                                            run2_t3infusioninputs.remove(at: index)
                                         }
                                     }) {
                                         Image("delete")
@@ -295,7 +337,7 @@ struct Run2View: View {
                     }
                     
                     //T4
-                    if !run2t4oralinputs.isEmpty {
+                    if !run2_t4oralinputs.isEmpty {
                         
                         Section(header:                                     HStack(alignment: .center, spacing: 10)
                                 {
@@ -319,8 +361,8 @@ struct Run2View: View {
                                     }
                                     Spacer()
                                     Button(action: {
-                                        if let index = run2t4oralinputs.firstIndex(where: { $0.id == t4oral.id }) {
-                                            run2t4oralinputs.remove(at: index)
+                                        if let index = run2_t4oralinputs.firstIndex(where: { $0.id == t4oral.id }) {
+                                            run2_t4oralinputs.remove(at: index)
                                         }
                                     }) {
                                         Image("delete")
@@ -334,7 +376,7 @@ struct Run2View: View {
                         }
                     }
                     
-                    if !run2t4ivinputs.isEmpty {
+                    if !run2_t4ivinputs.isEmpty {
                         Section(header:                                     HStack(alignment: .center, spacing: 10)
                                 {
                             Image("syringe2")
@@ -353,8 +395,8 @@ struct Run2View: View {
                                     }
                                     Spacer()
                                     Button(action: {
-                                        if let index = run2t4ivinputs.firstIndex(where: { $0.id == t4iv.id }) {
-                                            run2t4ivinputs.remove(at: index)
+                                        if let index = run2_t4ivinputs.firstIndex(where: { $0.id == t4iv.id }) {
+                                            run2_t4ivinputs.remove(at: index)
                                         }
                                     }) {
                                         Image("delete")
@@ -369,7 +411,7 @@ struct Run2View: View {
                         }
                     }
                     
-                    if !run2t4infusioninputs.isEmpty {
+                    if !run2_t4infusioninputs.isEmpty {
                         Section(header:                                     HStack(alignment: .center, spacing: 10)
                                 {
                                     Image("infusion2")
@@ -389,8 +431,8 @@ struct Run2View: View {
                                     }
                                     Spacer()
                                     Button(action: {
-                                        if let index = run2t4infusioninputs.firstIndex(where: { $0.id == t4infusion.id }) {
-                                            run2t4infusioninputs.remove(at: index)
+                                        if let index = run2_t4infusioninputs.firstIndex(where: { $0.id == t4infusion.id }) {
+                                            run2_t4infusioninputs.remove(at: index)
                                         }
                                     }) {
                                         Image("delete")
@@ -417,33 +459,33 @@ struct Run2View: View {
             switch popup {
             case .T3OralInputs:
                 T3OralPopupView { newT3Oral in
-                    run2t3oralinputs.append(newT3Oral)
+                    run2_t3oralinputs.append(newT3Oral)
                     activePopup = nil
                 }
             case .T3IVInputs:
                 T3IVPopupView { newT3IV in
-                    run2t3ivinputs.append(newT3IV)
+                    run2_t3ivinputs.append(newT3IV)
                     activePopup = nil
                 }
             case .T3InfusionInputs:
                 T3InfusionPopupView { newT3Infusion in
-                    run2t3infusioninputs.append(newT3Infusion)
+                    run2_t3infusioninputs.append(newT3Infusion)
                     activePopup = nil
                 }
                 
             case .T4OralInputs:
                 T4OralPopupView { newT4Oral in
-                    run2t4oralinputs.append(newT4Oral)
+                    run2_t4oralinputs.append(newT4Oral)
                     activePopup = nil
                 }
             case .T4IVInputs:
                 T4IVPopupView { newT4IV in
-                    run2t4ivinputs.append(newT4IV)
+                    run2_t4ivinputs.append(newT4IV)
                     activePopup = nil
                 }
             case .T4InfusionInputs:
                 T4InfusionPopupView { newT4Infusion in
-                    run2t4infusioninputs.append(newT4Infusion)
+                    run2_t4infusioninputs.append(newT4Infusion)
                     activePopup = nil
                 }
                 
@@ -472,66 +514,7 @@ struct Run2InputField: View {
                 .cornerRadius(8)
                 .foregroundColor(.black)
                 .fixedSize(horizontal:true, vertical: true)
-
-            GraphSection(
-                title: showFreeHormones ? "Free T4" : "T4",
-                yLabel: showFreeHormones ? "FT4 (µg/L)" : "T4 (µg/L)",
-                xLabel: "Days",
-                values: result.time.indices.map {
-                    (result.time[$0], showFreeHormones ? result.ft4[$0] : result.t4[$0])
-                },
-                color: showFreeHormones ? .purple : .blue,
-                yAxisRange: dynamicRange(showFreeHormones ? result.ft4 : result.t4),
-                xAxisRange: effectiveXAxisRange // Use the calculated effective range
-            )
-            .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
-
-            GraphSection(
-                title: showFreeHormones ? "Free T3" : "T3",
-                yLabel: showFreeHormones ? "FT3 (µg/L)" : "T3 (µg/L)",
-                xLabel: "Days",
-                values: result.time.indices.map {
-                    (result.time[$0], showFreeHormones ? result.ft3[$0] : result.t3[$0])
-                },
-                color: showFreeHormones ? .orange : .green,
-                yAxisRange: dynamicRange(showFreeHormones ? result.ft3 : result.t3),
-                xAxisRange: effectiveXAxisRange // Use the calculated effective range
-            )
-            .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
-
-            GraphSection(
-                title: "TSH",
-                yLabel: "TSH (mU/L)",
-                xLabel: "Days",
-                values: result.time.indices.map { (result.time[$0], result.tsh[$0]) },
-                color: .red,
-                yAxisRange: dynamicRange(result.tsh),
-                xAxisRange: effectiveXAxisRange // Use the calculated effective range
-            )
-            .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
-
         }
-        .navigationTitle("Simulation Results")
-        .listStyle(.plain)
-    }
-
-    func dynamicRange(_ values: [Double]) -> ClosedRange<Double> {
-        guard let minVal = values.min(), let maxVal = values.max(), minVal <= maxVal else {
-            let defaultVal = values.first ?? 0.0
-            return (defaultVal - 1)...(defaultVal + 1) // Provide a default range if data is empty or constant
-        }
-        if minVal == maxVal { // Handle constant data
-            return (minVal - 1)...(maxVal + 1)
-
-        }
-        // Add a small buffer (e.g., 10%) to min and max for better visibility
-        let buffer = (maxVal - minVal) * 0.1
-        let effectiveBuffer = buffer > 0 ? buffer : 1.0 // Ensure buffer is not zero
-        
-        let lower = minVal - effectiveBuffer
-        let upper = maxVal + effectiveBuffer
-        // For hormone values, often good to ensure lower bound doesn't go significantly below zero if data is non-negative.
-        // However, if minVal itself is negative, allow negative lower bound.
-        return (minVal >= 0 && lower < 0 ? 0 : lower)...upper
+        .padding(.horizontal)
     }
 }
