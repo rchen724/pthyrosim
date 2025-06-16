@@ -55,16 +55,19 @@ struct SimulationGraphView: View {
             )
             .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
 
+            // In SimulationGraphView.swift
+
             GraphSection(
                 title: showFreeHormones ? "Free T3" : "T3",
                 yLabel: showFreeHormones ? "FT3 (µg/L)" : "T3 (µg/L)",
                 xLabel: "Days",
                 values: result.time.indices.map {
+                    // --- This is the line with the corrected typo ---
                     (result.time[$0], showFreeHormones ? result.ft3[$0] : result.t3[$0])
                 },
                 color: showFreeHormones ? .orange : .green,
                 yAxisRange: dynamicRange(showFreeHormones ? result.ft3 : result.t3),
-                xAxisRange: effectiveXAxisRange // Use the calculated effective range
+                xAxisRange: effectiveXAxisRange
             )
             .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
 
