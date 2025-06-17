@@ -74,22 +74,6 @@ struct T3OralPopupView: View {
                                 if !T3SingleDose {
                                     HStack(alignment: .firstTextBaseline) {
                                         VStack(alignment: .leading, spacing: 10) {
-                                            Text("Dose End Day or Time")
-                                                .frame(width: 150, alignment: .leading)
-                                            Text("E.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                                .frame(width: 150, alignment: .trailing)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                        }
-                                        Spacer()
-                                        Step2InputField(title: "", value: $T3OralDoseEnd)
-                                            .multilineTextAlignment(.leading)
-                                            .frame(width: 100, alignment: .trailing)
-                                            .keyboardType(.decimalPad)
-                                    }
-                                    HStack(alignment: .firstTextBaseline) {
-                                        VStack(alignment: .leading, spacing: 10) {
                                             Text("Dosing Interval (days)")
                                                 .frame(width: 150, alignment: .leading)
                                                 .fixedSize(horizontal: false, vertical: true)
@@ -105,6 +89,23 @@ struct T3OralPopupView: View {
                                             .frame(width: 100, alignment: .trailing)
                                             .keyboardType(.decimalPad)
                                     }
+                                    HStack(alignment: .firstTextBaseline) {
+                                        VStack(alignment: .leading, spacing: 10) {
+                                            Text("Dose End Day or Time")
+                                                .frame(width: 150, alignment: .leading)
+                                            Text("E.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                                .frame(width: 150, alignment: .trailing)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                        Spacer()
+                                        Step2InputField(title: "", value: $T3OralDoseEnd)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(width: 100, alignment: .trailing)
+                                            .keyboardType(.decimalPad)
+                                    }
+
                                 }
                             }
                         }

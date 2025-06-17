@@ -219,8 +219,8 @@ struct Step2View: View {
                                         Text("Dose (µg): \(String(format: "%.2f", t3oral.T3OralDoseInput))")
                                         Text("Dose Start Day or Time: \(String(format: "%.2f", t3oral.T3OralDoseStart))")
                                         if !t3oral.T3SingleDose {
-                                            Text("Dose End Day or Time: \(String(format: "%.2f", t3oral.T3OralDoseEnd))")
                                             Text("Dosing Interval (days): \(String(format: "%.2f", t3oral.T3OralDoseInterval))")
+                                            Text("Dose End Day or Time: \(String(format: "%.2f", t3oral.T3OralDoseEnd))")
                                         }
                                     }
                                     Spacer()
@@ -330,8 +330,8 @@ struct Step2View: View {
                                         Text("Dose (µg): \(String(format: "%.2f", t4oral.T4OralDoseInput))")
                                         Text("Dose Start Day or Time: \(String(format: "%.2f", t4oral.T4OralDoseStart))")
                                         if !t4oral.T4SingleDose {
-                                            Text("Dose End Day or Time: \(String(format: "%.2f", t4oral.T4OralDoseEnd))")
                                             Text("Dosing Interval (days): \(String(format: "%.2f", t4oral.T4OralDoseInterval))")
+                                            Text("Dose End Day or Time: \(String(format: "%.2f", t4oral.T4OralDoseEnd))")
                                         }
                                     }
                                     Spacer()

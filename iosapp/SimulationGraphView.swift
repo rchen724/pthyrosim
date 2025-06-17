@@ -4,8 +4,10 @@ import Charts
 struct SimulationGraphView: View {
     let result: ThyroidSimulationResult
     let simulationDurationDays: Int // New property to receive simulation days
+    var isForPrint: Bool = false 
 
     @State private var showFreeHormones: Bool = false
+    @State private var showingPrintPreview = false
 
     var body: some View {
         // Calculate effectiveXAxisRange based on simulation results and duration
@@ -83,36 +85,44 @@ struct SimulationGraphView: View {
             .listRowInsets(EdgeInsets(top: 20, leading: 15, bottom: 20, trailing: 15))
 
         }
-        .navigationTitle("Simulation Results")
+
+        .navigationTitle(isForPrint ? "" : "Simulation Results")
         .listStyle(.plain)
         .toolbar {
+            // Print button on the leading (left) side
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    showingPrintPreview = true
+                } label: {
+                    Label("Print", systemImage: "printer")
+                }
+            }
+
+            // Run 2 navigation on trailing (right) side
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: Run2View()) {
                     Text("Run 2")
                 }
             }
         }
+        .sheet(isPresented: $showingPrintPreview) {
+            PrintPreviewView(
+                result: result,
+                simulationDurationDays: simulationDurationDays,
+                onPrint: { completion in
+                    let image = PrintableSimulationGraphView(
+                        result: result,
+                        simulationDurationDays: simulationDurationDays
+                    ).snapshot()
+                    printGraphImage(image) {
+                        completion()  // call completion AFTER print finishes
+                    }
+                }
+            )
+        }
         
     }
 
-    func dynamicRange(_ values: [Double]) -> ClosedRange<Double> {
-        guard let minVal = values.min(), let maxVal = values.max(), minVal <= maxVal else {
-            let defaultVal = values.first ?? 0.0
-            return (defaultVal - 1)...(defaultVal + 1) // Provide a default range if data is empty or constant
-        }
-        if minVal == maxVal { // Handle constant data
-            return (minVal - 1)...(maxVal + 1)
-        }
-        // Add a small buffer (e.g., 10%) to min and max for better visibility
-        let buffer = (maxVal - minVal) * 0.1
-        let effectiveBuffer = buffer > 0 ? buffer : 1.0 // Ensure buffer is not zero
-        
-        let lower = minVal - effectiveBuffer
-        let upper = maxVal + effectiveBuffer
-        // For hormone values, often good to ensure lower bound doesn't go significantly below zero if data is non-negative.
-        // However, if minVal itself is negative, allow negative lower bound.
-        return (minVal >= 0 && lower < 0 ? 0 : lower)...upper
-    }
 }
 
 
@@ -520,4 +530,23 @@ struct Run2InputField: View {
         }
         .padding(.horizontal)
     }
+}
+
+func dynamicRange(_ values: [Double]) -> ClosedRange<Double> {
+    guard let minVal = values.min(), let maxVal = values.max(), minVal <= maxVal else {
+        let defaultVal = values.first ?? 0.0
+        return (defaultVal - 1)...(defaultVal + 1) // Provide a default range if data is empty or constant
+    }
+    if minVal == maxVal { // Handle constant data
+        return (minVal - 1)...(maxVal + 1)
+    }
+    // Add a small buffer (e.g., 10%) to min and max for better visibility
+    let buffer = (maxVal - minVal) * 0.1
+    let effectiveBuffer = buffer > 0 ? buffer : 1.0 // Ensure buffer is not zero
+    
+    let lower = minVal - effectiveBuffer
+    let upper = maxVal + effectiveBuffer
+    // For hormone values, often good to ensure lower bound doesn't go significantly below zero if data is non-negative.
+    // However, if minVal itself is negative, allow negative lower bound.
+    return (minVal >= 0 && lower < 0 ? 0 : lower)...upper
 }
