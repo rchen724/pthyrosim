@@ -17,7 +17,6 @@ struct ThyrosimConstants {
     static let VPref: Double = 2.7749
     static let S4: Double = 0.00278
     static let S3: Double = 0.0015
-    static let T4: Double = 0.05 // Note: This constant seems unused in the simulator logic
     static let kDegTSH: Double = 0.1
     static let kDegT4: Double = 0.1
     static let Kf4: Double = 8.4

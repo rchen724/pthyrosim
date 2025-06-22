@@ -1,24 +1,27 @@
 import SwiftUI
 
 struct Step1View: View {
-    // AppStorage variables remain, though unit selection ones won't be used for Pickers anymore
+    // AppStorage variables to store user input
     @AppStorage("t4Secretion") private var t4Secretion: String = "100"
-    @AppStorage("t4Absorption") private var t4Absorption: String = "88" // Assuming this is still used elsewhere
+    @AppStorage("t4Absorption") private var t4Absorption: String = "88"
     @AppStorage("t3Secretion") private var t3Secretion: String = "100"
-    @AppStorage("t3Absorption") private var t3Absorption: String = "88" // Assuming this is still used elsewhere
+    @AppStorage("t3Absorption") private var t3Absorption: String = "88"
     @AppStorage("simulationDays") private var simulationDays: String = "5"
-    @AppStorage("height") private var height: String = "1.65" // User will input this as meters
-    @AppStorage("weight") private var weight: String = "91"   // User will input this as kilograms
-    @AppStorage("selectedGender") private var selectedGender: String = "Female" // Default to Female
-    // @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "m" // No longer needed for a Picker
-    // @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg" // No longer needed for a Picker
+    @AppStorage("height") private var height: String = "170" // Default height
+    @AppStorage("weight") private var weight: String = "70"   // Default weight
+    @AppStorage("selectedGender") private var selectedGender: String = "Female"
     @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
 
+    // New AppStorage for units
+    @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "cm"
+    @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg"
+
     let genders = ["Male", "Female"]
-    // Removed heightUnits and weightUnits as they are no longer used for Pickers
+    let heightUnits = ["cm", "in"]
+    let weightUnits = ["kg", "lb"]
 
     var body: some View {
-        NavigationView { // Consider if NavigationView is needed here or if it's part of MainView
+        NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
                     Text("Enter Simulation Conditions")
@@ -48,25 +51,41 @@ struct Step1View: View {
                             Text("Gender")
                                 .font(.callout)
                                 .foregroundColor(.white)
-                            Picker("Gender", selection: $selectedGender) { // Added label to Picker for clarity
+                            Picker("Gender", selection: $selectedGender) {
                                 ForEach(genders, id: \.self) { gender in
-                                    Text(gender).tag(gender) // Ensure tags are set
+                                    Text(gender).tag(gender)
                                 }
                             }
-                            .pickerStyle(SegmentedPickerStyle()) // Using SegmentedPickerStyle for Gender
+                            .pickerStyle(SegmentedPickerStyle())
                             .background(Color.gray.opacity(0.3))
                             .cornerRadius(8)
-                            // .foregroundColor(.white) // Segmented style handles text color
                         }
                         .padding(.horizontal)
+
+                        // Height Input with Unit Picker
+                        HStack {
+                            Step1InputField(title: "Height", value: $height, keyboardType: .decimalPad)
+                            Picker("Height Unit", selection: $selectedHeightUnit) {
+                                ForEach(heightUnits, id: \.self) { unit in
+                                    Text(unit)
+                                }
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .frame(width: 150)
+                        }.padding(.horizontal)
+
+                        // Weight Input with Unit Picker
+                        HStack {
+                            Step1InputField(title: "Weight", value: $weight, keyboardType: .decimalPad)
+                            Picker("Weight Unit", selection: $selectedWeightUnit) {
+                                ForEach(weightUnits, id: \.self) { unit in
+                                    Text(unit)
+                                }
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .frame(width: 150)
+                        }.padding(.horizontal)
                         
-                        // Updated Height Input Field
-                        Step1InputField(title: "Height (in m)", value: $height, keyboardType: .decimalPad)
-                        
-                        // Updated Weight Input Field
-                        Step1InputField(title: "Weight (in kg)", value: $weight, keyboardType: .decimalPad)
-                        
-                        // Removed the duplicate "Weight" input field that was here.
                         Step1InputField(title: "Simulation Interval (days <= 100)", value: $simulationDays, keyboardType: .numberPad)
                     }
 
@@ -93,46 +112,37 @@ struct Step1View: View {
                         .padding(.bottom, 30)
                 }
                 .padding()
-                .frame(maxWidth: .infinity, alignment: .top) // This keeps content at the top if ScrollView is too tall
+                .frame(maxWidth: .infinity, alignment: .top)
             }
             .background(Color.black.ignoresSafeArea())
-            .onAppear { // Defensive check for gender picker default
+            .onAppear {
                 if selectedGender.isEmpty || !genders.contains(selectedGender) {
                     selectedGender = "Female"
                 }
             }
         }
-        // .navigationViewStyle(.stack) // Apply to NavigationView if you want stack behavior explicitly.
     }
 }
 
-// Step1InputField struct remains the same, but we'll pass keyboardType to it
 struct Step1InputField: View {
     var title: String
     @Binding var value: String
-    var keyboardType: UIKeyboardType = .default // Added keyboardType parameter
+    var keyboardType: UIKeyboardType = .default
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(title)
                 .font(.callout)
                 .foregroundColor(.white)
-            TextField("Enter value", text: $value) // Added a generic placeholder
-                .keyboardType(keyboardType) // Apply the passed keyboardType
+            TextField("Enter value", text: $value)
+                .keyboardType(keyboardType)
                 .padding(10)
                 .background(Color.white.opacity(0.1))
                 .cornerRadius(8)
-                .foregroundColor(.white)
-                .autocorrectionDisabled(true) // Often useful for numerical/code-like inputs
-                .textInputAutocapitalization(.never) // Useful for certain types of input
+                .foregroundColor(.black)
+                .autocorrectionDisabled(true)
+                .textInputAutocapitalization(.never)
         }
-        .padding(.horizontal) // Apply horizontal padding to the whole input field group
-    }
-}
-
-struct Step1View_Previews: PreviewProvider {
-    static var previews: some View {
-        Step1View()
-            // .environmentObject(AppState()) // If your preview needs it
+        .padding(.horizontal)
     }
 }

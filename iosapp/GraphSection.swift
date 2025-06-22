@@ -5,242 +5,226 @@ struct GraphSection: View {
     let title: String
     let yLabel: String
     let xLabel: String
+    
+    // Primary data series (Run 1)
     let values: [(Double, Double)]
     let color: Color
+    
+    // Secondary data series (Run 2)
+    let secondaryValues: [(Double, Double)]?
+    let secondaryColor: Color?
+
     let initialYAxisRange: ClosedRange<Double>
     let initialXAxisRange: ClosedRange<Double>
 
+    // State variables for zoom/pan
     @State private var currentXDomain: ClosedRange<Double>
     @State private var currentYDomain: ClosedRange<Double>
-
-    // Store the domain state at the beginning of a gesture sequence
     @State private var gestureStartDomainX: ClosedRange<Double>?
     @State private var gestureStartDomainY: ClosedRange<Double>?
-    
-    // Store the current magnification and translation from the ongoing gesture
     @State private var currentMagnification: CGFloat = 1.0
     @State private var currentTranslation: CGSize = .zero
 
-    private let minDomainSpanFactor: CGFloat = 0.01 // Allow zooming in to 1% of original span
-    private let maxDomainSpanFactor: CGFloat = 20.0  // Allow zooming out to 20x original span
+    private let minDomainSpanFactor: CGFloat = 0.01 // Max zoom in
+    private let maxDomainSpanFactor: CGFloat = 20.0  // Max zoom out
 
-    init(title: String, yLabel: String, xLabel: String, values: [(Double, Double)], color: Color, yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>) {
+    init(title: String, yLabel: String, xLabel: String, values: [(Double, Double)], color: Color, secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil, yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>) {
         self.title = title
         self.yLabel = yLabel
         self.xLabel = xLabel
         self.values = values
         self.color = color
+        self.secondaryValues = secondaryValues
+        self.secondaryColor = secondaryColor
         
-        // Validate initial ranges to prevent issues if lowerBound >= upperBound
-        let validatedXAxisRange = (xAxisRange.lowerBound < xAxisRange.upperBound) ? xAxisRange : (xAxisRange.lowerBound...(xAxisRange.lowerBound + max(1.0, (values.last?.0 ?? xAxisRange.lowerBound + 1.0) - xAxisRange.lowerBound)))
+        let validatedXAxisRange = (xAxisRange.lowerBound < xAxisRange.upperBound) ? xAxisRange : (xAxisRange.lowerBound...(xAxisRange.lowerBound + 1.0))
         let validatedYAxisRange = (yAxisRange.lowerBound < yAxisRange.upperBound) ? yAxisRange : (yAxisRange.lowerBound...(yAxisRange.lowerBound + 1.0))
 
         self.initialXAxisRange = validatedXAxisRange
         self.initialYAxisRange = validatedYAxisRange
         
-        // --- FIX: Start with a zoomed-in view of the last 3 days to see the circadian rhythm ---
+        // Default zoom to the last 2 days to show oscillations more clearly.
         let maxTimeInDays = validatedXAxisRange.upperBound
-        let startTimeInDays = max(validatedXAxisRange.lowerBound, maxTimeInDays - 3)
+        let startTimeInDays = max(validatedXAxisRange.lowerBound, maxTimeInDays - 2)
         let zoomedInXAxisRange = startTimeInDays...maxTimeInDays
 
-        // Use the zoomed-in range for the initial state of the chart, but fall back to the full range if it's invalid
         _currentXDomain = State(initialValue: zoomedInXAxisRange.lowerBound < zoomedInXAxisRange.upperBound ? zoomedInXAxisRange : validatedXAxisRange)
-        // --- END FIX ---
-        
         _currentYDomain = State(initialValue: validatedYAxisRange)
     }
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(.primary)
                 Spacer()
-                Button {
-                    resetZoomAndPan()
-                } label: {
-                    Image(systemName: "arrow.uturn.backward.circle")
-                        .font(.title3)
+                // Legend for the two lines
+                if secondaryValues != nil {
+                    HStack(spacing: 15) {
+                        HStack(spacing: 4) {
+                            Rectangle().frame(width: 15, height: 3).foregroundStyle(color)
+                            Text("Run 1").font(.caption)
+                        }
+                        HStack(spacing: 4) {
+                            Rectangle().frame(width: 15, height: 3).foregroundStyle(secondaryColor ?? .white)
+                            Text("Run 2").font(.caption)
+                        }
+                    }
                 }
-                .buttonStyle(.borderless)
+                Button { resetZoomAndPan() } label: { Image(systemName: "arrow.uturn.backward.circle").font(.title3) }.buttonStyle(.borderless)
             }
             .padding(.horizontal)
 
-            if values.isEmpty {
-                Text("No data available for \(title).")
-                    .italic()
-                    .foregroundColor(.secondary)
-                    .frame(height: 250, alignment: .center)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding(.horizontal)
-            } else {
-                GeometryReader { chartGeometry in
-                    Chart {
-                        // Optional: Normal Range display
-                        if let range = normalRange(for: title) {
-                             RectangleMark(
-                                 xStart: .value("Range Start", currentXDomain.lowerBound),
-                                 xEnd: .value("Range End", currentXDomain.upperBound),
-                                 yStart: .value("Normal Min", range.lowerBound),
-                                 yEnd: .value("Normal Max", range.upperBound)
-                             )
-                             .foregroundStyle(Color.yellow.opacity(0.15)) // Slightly less opaque
-                         }
 
-                        ForEach(values, id: \.0) { time, value in
-                            LineMark(
-                                x: .value(xLabel, time),
-                                y: .value(yLabel, value)
-                            )
-                            .foregroundStyle(color)
-                            .interpolationMethod(.catmullRom)
-                        }
-                    }
-                    .chartXScale(domain: currentXDomain)
-                    .chartYScale(domain: currentYDomain)
-                    .chartPlotStyle { plotArea in
-                        plotArea.clipped()
-                    }
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0) // Allow drag to start immediately
-                            .onChanged { value in
-                                if gestureStartDomainX == nil { // First event in a new gesture sequence
-                                    gestureStartDomainX = currentXDomain
-                                    gestureStartDomainY = currentYDomain
-                                    currentMagnification = 1.0 // Reset magnification for this sequence
+            if values.isEmpty {
+                ContentUnavailableView("No Data", systemImage: "chart.bar.xaxis.ascending")
+                    .frame(height: 250)
+            } else {
+                ZStack(alignment: .bottomTrailing) {
+                    GeometryReader { chartGeometry in
+                        Chart {
+                             // Shaded area for the normal range
+                             if let range = normalRange(for: title) {
+                                 RectangleMark(
+                                    xStart: .value("X Start", currentXDomain.lowerBound),
+                                    xEnd: .value("X End", currentXDomain.upperBound),
+                                    yStart: .value("Normal Min", range.lowerBound),
+                                    yEnd: .value("Normal Max", range.upperBound)
+                                 )
+                                 .foregroundStyle(Color.yellow.opacity(0.2))
+                             }
+
+                            // Draw primary line (Run 1)
+                            ForEach(Array(values.enumerated()), id: \.offset) { _, point in
+                                LineMark(x: .value(xLabel, point.0), y: .value(yLabel, point.1))
+                                    .foregroundStyle(color)
+                                    .interpolationMethod(.catmullRom)
+                            }
+
+                            // Draw secondary line (Run 2), if it exists
+                            if let secondary = secondaryValues, let secColor = secondaryColor {
+                                ForEach(Array(secondary.enumerated()), id: \.offset) { _, point in
+                                    LineMark(x: .value(xLabel, point.0), y: .value(yLabel, point.1))
+                                        .foregroundStyle(secColor)
+                                        .interpolationMethod(.catmullRom)
+                                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                                 }
-                                currentTranslation = value.translation // Accumulate translation for this gesture
-                                updateDomains(chartRenderSize: chartGeometry.size)
                             }
-                            .onEnded { value in
-                                currentTranslation = value.translation
-                                updateDomains(chartRenderSize: chartGeometry.size)
-                                // Finalize the domain
-                                gestureStartDomainX = nil
-                                gestureStartDomainY = nil
-                                // currentMagnification and currentTranslation will be reset/ignored at the start of the next gesture
-                            }
-                            .simultaneously(with: MagnificationGesture()
+                        }
+                        .chartXScale(domain: currentXDomain)
+                        .chartYScale(domain: currentYDomain)
+                        .chartPlotStyle { $0.clipped() }
+                        .background(Color(UIColor.systemGray6)).cornerRadius(8)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
                                 .onChanged { value in
-                                    if gestureStartDomainX == nil { // First event
+                                    if gestureStartDomainX == nil {
                                         gestureStartDomainX = currentXDomain
                                         gestureStartDomainY = currentYDomain
-                                        currentTranslation = .zero // Reset translation for this sequence
                                     }
-                                    currentMagnification = value // This is the magnification since gesture start
+                                    currentTranslation = value.translation
                                     updateDomains(chartRenderSize: chartGeometry.size)
                                 }
-                                .onEnded { value in
-                                    currentMagnification = value
-                                    updateDomains(chartRenderSize: chartGeometry.size)
-                                    // Finalize the domain
-                                    gestureStartDomainX = nil
-                                    gestureStartDomainY = nil
-                                }
-                            )
-                    )
+                                .onEnded { _ in gestureStartDomainX = nil; gestureStartDomainY = nil }
+                                .simultaneously(with: MagnificationGesture()
+                                    .onChanged { value in
+                                        if gestureStartDomainX == nil {
+                                            gestureStartDomainX = currentXDomain
+                                            gestureStartDomainY = currentYDomain
+                                        }
+                                        currentMagnification = value
+                                        updateDomains(chartRenderSize: chartGeometry.size)
+                                    }
+                                    .onEnded { _ in gestureStartDomainX = nil; gestureStartDomainY = nil }
+                                )
+                        )
+                    }
+                    .frame(height: 250).padding(.horizontal)
+                    
+                    HStack {
+                        Button { zoom(by: 1.25) } label: { Image(systemName: "minus.magnifyingglass") }
+                        Button { zoom(by: 0.8) } label: { Image(systemName: "plus.magnifyingglass") }
+                    }
+                    .font(.title2)
+                    .padding()
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .padding([.trailing, .bottom], 10)
+                    .buttonStyle(.borderless)
                 }
-                .frame(height: 250)
-                .padding(.horizontal)
             }
         }
-        .onChange(of: initialXAxisRange) {
+        .onChange(of: values.count) {
             resetZoomAndPan()
         }
-        .onChange(of: initialYAxisRange) {
-            resetZoomAndPan()
-        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func zoom(by scaleFactor: CGFloat) {
+        let newXSpan = currentXDomain.span * scaleFactor
+        let newYSpan = currentYDomain.span * scaleFactor
+        
+        currentXDomain = currentXDomain.zoomed(by: newXSpan)
+        currentYDomain = currentYDomain.zoomed(by: newYSpan)
     }
     
     private func updateDomains(chartRenderSize: CGSize) {
-        guard let startX = gestureStartDomainX, let startY = gestureStartDomainY else {
-            return
-        }
-
-        // --- Apply Zoom (scaling) first ---
-        var newXLower = startX.lowerBound
-        var newXUpper = startX.upperBound
-        var newYLower = startY.lowerBound
-        var newYUpper = startY.upperBound
-
-        if currentMagnification != 1.0 {
-            let centerX = (startX.lowerBound + startX.upperBound) / 2
-            let centerY = (startY.lowerBound + startY.upperBound) / 2
-
-            var newXSpan = (startX.upperBound - startX.lowerBound) / Double(currentMagnification)
-            var newYSpan = (startY.upperBound - startY.upperBound) / Double(currentMagnification)
-
-            // Apply span limits
-            let initialXSpan = initialXAxisRange.upperBound - initialXAxisRange.lowerBound
-            let initialYSpan = initialYAxisRange.upperBound - initialYAxisRange.lowerBound
-            newXSpan = max(initialXSpan * minDomainSpanFactor, min(initialXSpan * maxDomainSpanFactor, newXSpan))
-            newYSpan = max(initialYSpan * minDomainSpanFactor, min(initialYSpan * maxDomainSpanFactor, newYSpan))
-            
-            if newXSpan <= 0 { newXSpan = initialXSpan * minDomainSpanFactor } // extra guard
-            if newYSpan <= 0 { newYSpan = initialYSpan * minDomainSpanFactor } // extra guard
-
-
-            newXLower = centerX - newXSpan / 2
-            newXUpper = centerX + newXSpan / 2
-            newYLower = centerY - newYSpan / 2
-            newYUpper = centerY + newYSpan / 2
-        }
+        guard let xStart = gestureStartDomainX, let yStart = gestureStartDomainY else { return }
         
-        // --- Apply Pan (translation) to the (potentially) zoomed domain ---
-        if currentTranslation != .zero && chartRenderSize.width > 0 && chartRenderSize.height > 0 {
-            let currentNewXSpan = newXUpper - newXLower
-            let currentNewYSpan = newYUpper - newYLower
-
-            let xDataPerPoint = currentNewXSpan / Double(chartRenderSize.width)
-            let yDataPerPoint = currentNewYSpan / Double(chartRenderSize.height)
-            
-            let xDataShift = Double(currentTranslation.width) * xDataPerPoint
-            let yDataShift = Double(currentTranslation.height) * yDataPerPoint
-
-            newXLower -= xDataShift
-            newXUpper -= xDataShift
-            newYLower += yDataShift
-            newYUpper += yDataShift
-        }
-
-        // Update the domains
-        if newXLower < newXUpper {
-            currentXDomain = newXLower...newXUpper
-        }
-        if newYLower < newYUpper {
-            currentYDomain = newYLower...newYUpper
-        }
+        // --- Panning ---
+        let xTranslation = currentTranslation.width * (xStart.span / chartRenderSize.width)
+        let yTranslation = -currentTranslation.height * (yStart.span / chartRenderSize.height)
+        
+        let newXLower = xStart.lowerBound - xTranslation
+        let newYLower = yStart.lowerBound - yTranslation
+        
+        // --- Zooming ---
+        let newXSpan = xStart.span / currentMagnification
+        let newYSpan = yStart.span / currentMagnification
+        
+        currentXDomain = newXLower...(newXLower + newXSpan)
+        currentYDomain = newYLower...(newYLower + newYSpan)
     }
 
     private func resetZoomAndPan() {
-        currentXDomain = initialXAxisRange
+        let maxTimeInDays = initialXAxisRange.upperBound
+        let startTimeInDays = max(initialXAxisRange.lowerBound, maxTimeInDays - 2)
+        currentXDomain = startTimeInDays...maxTimeInDays
         currentYDomain = initialYAxisRange
-        gestureStartDomainX = nil
-        gestureStartDomainY = nil
-        currentMagnification = 1.0
-        currentTranslation = .zero
     }
     
+    /// Returns the normal physiological range for a given hormone.
     func normalRange(for hormone: String) -> ClosedRange<Double>? {
         switch hormone {
-        case "T4", "T4 (µg/L)": return 60.0...90.0
-        case "T3", "T3 (µg/L)": return 0.8...1.8
-        case "TSH", "TSH (mU/L)": return 0.5...4.0
-        case "Free T4", "FT4 (µg/L)": return 9.0...23.0
-        case "Free T3", "FT3 (µg/L)": return 2.3...4.2
+        case "T4":
+            // From common clinical values, supported by graph visuals in the paper.
+            return 50.0...120.0
+        case "Free T4":
+            // Using common clinical reference ranges for FT4 in µg/L.
+            return 10.0...25.0
+        case "T3":
+            // Based on graph visuals in the paper.
+            return 0.8...1.8
+        case "Free T3":
+            // Using common clinical reference ranges for FT3 in µg/L.
+            return 2.3...4.2
+        case "TSH":
+            // Based on the paper stating the normal range is approximately 0.4 to 4.5 mU/L.
+            return 0.4...4.5
         default:
-            if yLabel.contains("T4") && yLabel.lowercased().contains("free") { return 9.0...23.0 }
-            if yLabel.contains("T3") && yLabel.lowercased().contains("free") { return 2.3...4.2 }
-            if yLabel.contains("T4") { return 60.0...90.0 }
-            if yLabel.contains("T3") { return 0.8...1.8 }
-            if yLabel.contains("TSH") { return 0.5...4.0 }
             return nil
         }
+    }
+}
+
+// MARK: - Helper Extensions
+
+extension ClosedRange where Bound: FloatingPoint {
+    var span: Bound { upperBound - lowerBound }
+    
+    func zoomed(by newSpan: Bound) -> Self {
+        let center = lowerBound + span / 2
+        return (center - newSpan / 2)...(center + newSpan / 2)
     }
 }
