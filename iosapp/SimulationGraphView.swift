@@ -10,7 +10,7 @@ struct SimulationGraphView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                Text("Run 1 Results")
+                Text("Euthyroid Simulation Results")
                     .font(.largeTitle).fontWeight(.bold).padding(.top)
 
                 Toggle(isOn: $showFreeHormones) {
@@ -54,12 +54,12 @@ struct SimulationGraphView: View {
             }
             .padding()
         }
-        .navigationTitle("Simulation Results (Run 1)")
+        .navigationTitle("Euthyroid Simulation Results")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: Run2View(run1Result: result)) {
-                    Text("Compare (Run 2)")
+                NavigationLink(destination: Run2View()) {
+                    Text("Compare with Dosing")
                 }
             }
         }
@@ -95,7 +95,6 @@ struct SimulationGraphView: View {
         return (minVal >= 0 && lower < 0 ? 0 : lower)...upper
     }
     
-    // **NEW**: This function calculates a Y-axis that includes both the data's range and the fixed normal range.
     private func calculateYAxisDomain(for values: [Double], title: String) -> ClosedRange<Double> {
         let dataRange = dynamicRange(for: values)
         

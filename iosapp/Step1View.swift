@@ -72,6 +72,8 @@ struct Step1View: View {
                             }
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(width: 150)
+                            .background(Color.gray.opacity(0.3)) // <-- Added for visibility
+                            .cornerRadius(8)                   // <-- Added for visibility
                         }.padding(.horizontal)
 
                         // Weight Input with Unit Picker
@@ -84,6 +86,8 @@ struct Step1View: View {
                             }
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(width: 150)
+                            .background(Color.gray.opacity(0.3)) // <-- Added for visibility
+                            .cornerRadius(8)                   // <-- Added for visibility
                         }.padding(.horizontal)
                         
                         Step1InputField(title: "Simulation Interval (days <= 100)", value: $simulationDays, keyboardType: .numberPad)
@@ -139,7 +143,7 @@ struct Step1InputField: View {
                 .padding(10)
                 .background(Color.white.opacity(0.1))
                 .cornerRadius(8)
-                .foregroundColor(.black)
+                .foregroundColor(.white) // <-- This is the change you requested
                 .autocorrectionDisabled(true)
                 .textInputAutocapitalization(.never)
         }

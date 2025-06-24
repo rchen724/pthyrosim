@@ -1,13 +1,7 @@
-//
-//  SimulationData.swift
-//  iosapp
-//
-//  Created by Shruthi Sathya on 6/17/25.
-//
 import Foundation
 import Combine
 
-// This class acts as a single source of truth for all dosing regimens.
+// This class acts as a single source of truth for all simulation data.
 // By making it an ObservableObject, we can share it across different views.
 class SimulationData: ObservableObject {
     @Published var t3oralinputs: [T3OralDose] = []
@@ -17,4 +11,7 @@ class SimulationData: ObservableObject {
     @Published var t4oralinputs: [T4OralDose] = []
     @Published var t4ivinputs: [T4IVDose] = []
     @Published var t4infusioninputs: [T4InfusionDose] = []
+    
+    // To store the result of the first simulation (euthyroid)
+    @Published var run1Result: ThyroidSimulationResult? = nil
 }

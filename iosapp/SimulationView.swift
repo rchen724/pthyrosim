@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 
 struct SimulationView: View {
+    @EnvironmentObject var simulationData: SimulationData
 
     @AppStorage("t4Secretion") private var t4Secretion: String = "100"
     @AppStorage("t3Secretion") private var t3Secretion: String = "100"
@@ -21,7 +22,7 @@ struct SimulationView: View {
             ZStack {
                 Color.black.ignoresSafeArea(edges: [.top, .horizontal])
                 VStack(spacing: 30) {
-                    Text("Run Simulation")
+                    Text("Run Euthyroid Simulation")
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
@@ -89,6 +90,7 @@ struct SimulationView: View {
                         }
                         
                         simResult = result
+                        simulationData.run1Result = result // Store result in shared data
                         navigateToGraph = true
                     }) {
                         Text("START SIMULATION")

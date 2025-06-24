@@ -1,16 +1,12 @@
 import SwiftUI
 
 struct Run2View: View {
-    // Access the shared data model from the environment.
     @EnvironmentObject var simulationData: SimulationData
-    let run1Result: ThyroidSimulationResult
     
-    // State for navigation and simulation
     @State private var run2Result: ThyroidSimulationResult?
     @State private var isSimulating: Bool = false
     @State private var navigateToGraph: Bool = false
     
-    // AppStorage to get original simulation parameters
     @AppStorage("t4Secretion") private var t4Secretion: String = "100"
     @AppStorage("t3Secretion") private var t3Secretion: String = "100"
     @AppStorage("height") private var heightString: String = "1.65"
@@ -22,60 +18,72 @@ struct Run2View: View {
     @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
 
     var body: some View {
-        ZStack {
-            Form {
-                // This view no longer takes input. It just shows the doses that will be used.
-                Section(header: Text("T4 Doses for Run 2 (from Step 2)")) {
-                    DoseDisplayView(doses: simulationData.t4oralinputs) { Text(format(dose: $0)) }
-                    DoseDisplayView(doses: simulationData.t4ivinputs) { Text(format(dose: $0)) }
-                    DoseDisplayView(doses: simulationData.t4infusioninputs) { Text(format(dose: $0)) }
-                }
-                
-                Section(header: Text("T3 Doses for Run 2 (from Step 2)")) {
-                    DoseDisplayView(doses: simulationData.t3oralinputs) { Text(format(dose: $0)) }
-                    DoseDisplayView(doses: simulationData.t3ivinputs) { Text(format(dose: $0)) }
-                    DoseDisplayView(doses: simulationData.t3infusioninputs) { Text(format(dose: $0)) }
-                }
-
-                Button(action: runSimulationAndNavigate) {
-                    HStack {
-                        Spacer()
-                        if isSimulating {
-                            ProgressView()
-                        } else {
-                            Text("Simulate and Compare")
-                                .fontWeight(.bold)
+        NavigationStack {
+            if let run1Result = simulationData.run1Result {
+                ZStack {
+                    Form {
+                        Section(header: Text("T4 Doses for Dosing Simulation (from Dosing tab)")) {
+                            DoseDisplayView(doses: simulationData.t4oralinputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.t4ivinputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.t4infusioninputs) { Text(format(dose: $0)) }
                         }
-                        Spacer()
+                        
+                        Section(header: Text("T3 Doses for Dosing Simulation (from Dosing tab)")) {
+                            DoseDisplayView(doses: simulationData.t3oralinputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.t3ivinputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.t3infusioninputs) { Text(format(dose: $0)) }
+                        }
+
+                        Button(action: { runSimulationAndNavigate(run1Result: run1Result) }) {
+                            HStack {
+                                Spacer()
+                                if isSimulating {
+                                    ProgressView()
+                                } else {
+                                    Text("Simulate and Compare with Euthyroid")
+                                        .fontWeight(.bold)
+                                }
+                                Spacer()
+                            }
+                        }
+                        .disabled(isSimulating)
+                        .padding()
+                    }
+                    .navigationTitle("Configure Dosing Simulation")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .navigationDestination(isPresented: $navigateToGraph) {
+                        if let run2Result = run2Result, let days = Int(simulationDays) {
+                            Run2GraphView(run1Result: run1Result, run2Result: run2Result, simulationDurationDays: days)
+                        }
                     }
                 }
-                .disabled(isSimulating)
-                .padding()
-            }
-            .navigationTitle("Configure Run 2")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(isPresented: $navigateToGraph) {
-                if let run2Result = run2Result, let days = Int(simulationDays) {
-                    Run2GraphView(run1Result: run1Result, run2Result: run2Result, simulationDurationDays: days)
+                .onAppear {
+                    // Reset previous run 2 results when view appears
+                    if self.run2Result != nil {
+                        self.run2Result = nil
+                    }
                 }
+            } else {
+                VStack {
+                    Text("Please run the 'Simulate Euthyroid' simulation first.")
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+                .navigationTitle("Simulate Dosing")
             }
         }
-        // Run the simulation automatically when the view appears.
-        .onAppear(perform: runSimulationAndNavigate)
     }
 
-    // MARK: - Helper Functions
-
-    private func runSimulationAndNavigate() {
+    private func runSimulationAndNavigate(run1Result: ThyroidSimulationResult) {
         guard let t4Sec = Double(t4Secretion), let t3Sec = Double(t3Secretion),
               let hVal = Double(heightString), let wVal = Double(weightString),
               let days = Int(simulationDays) else {
-            print("Error: Invalid Run 1 parameters.")
+            print("Error: Invalid Run 1 parameters from AppStorage.")
             return
         }
         
-        // Prevent re-simulation if already done
-        guard run2Result == nil, !isSimulating else { return }
+        guard !isSimulating else { return }
 
         isSimulating = true
         
@@ -83,7 +91,6 @@ struct Run2View: View {
             let heightInMeters = (heightUnit == "cm") ? hVal / 100.0 : ((heightUnit == "in") ? hVal * 0.0254 : hVal)
             let weightInKg = (weightUnit == "lb") ? wVal * 0.453592 : wVal
             
-            // The simulator now uses the dose arrays from the shared simulationData object.
             let simulator = ThyroidSimulator(
                 t4Secretion: t4Sec, t3Secretion: t3Sec, gender: gender,
                 height: heightInMeters, weight: weightInKg, days: days,
@@ -104,8 +111,6 @@ struct Run2View: View {
         }
     }
     
-    // MARK: - Formatting Functions (These could be moved to a shared utility file)
-
     private func format(dose: T4OralDose) -> String {
         let formattedDose = String(format: "%.1f", dose.T4OralDoseInput)
         let formattedStart = String(format: "%.1f", dose.T4OralDoseStart)
