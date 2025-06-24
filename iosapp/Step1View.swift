@@ -146,3 +146,4 @@ struct Step1InputField: View {
         .padding(.horizontal)
     }
 }
+

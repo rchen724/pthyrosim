@@ -24,7 +24,7 @@ struct Step2InputField: View {
             .padding(10)
             .background(Color.gray.opacity(0.2))
             .cornerRadius(8)
-            .foregroundColor(.white)
+            .foregroundColor(.black)
             .keyboardType(keyboardType)
             .autocorrectionDisabled(true)
             .textInputAutocapitalization(.never)
