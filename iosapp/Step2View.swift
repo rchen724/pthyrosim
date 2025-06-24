@@ -36,13 +36,25 @@ struct Step2View: View {
     var body: some View {
         ZStack{
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    Text("Do Simulated Dosing Experiment")
+                VStack(alignment: .center, spacing: 24) {
+                    Text("Simulated Dosing Experiment")
                         .font(.title2.bold())
                     
-                    Text("How: T3 and/or T4 input dosing can be chosen as oral doses; OR intravenous (IV) bolus doses; OR infusion doses.")
-                        .font(.body)
-                        .foregroundColor(.gray)
+                    VStack(alignment: .center, spacing: 12) {
+                        Text("HOW TO CONDUCT DOSING EXPERIMENT...")
+                            .font(.headline)
+                            .foregroundColor(.white)
+
+                        VStack(alignment: .center, spacing: 6) {
+                            Text("• T3 and/or T4 input dosing can be chosen")
+                            Text("as oral doses; OR intravenous (IV) bolus doses;")
+                            Text("OR infusion doses.")
+                            Text("• Click on an icon to add as input")
+                            Text("• Click one or more icons to add as many inputs")
+                            Text("and/or at as many times as desired")
+                        }
+                        .font(.footnote)
+                    }
                     
                     HStack(alignment: .top, spacing: 40) {
                         VStack(alignment: .center, spacing: 16) {
@@ -96,28 +108,7 @@ struct Step2View: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    
-                    Text("What: Combinations of T3 and T4 can be added as dosage inputs at different times and types.")
-                        .font(.body)
-                        .foregroundColor(.gray)
-
-                    // Instruction box
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("HOW TO CONDUCT DOSING EXPERIMENT?")
-                            .font(.headline)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.yellow)
-                            .foregroundColor(.black)
-                            .cornerRadius(8)
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("• Click on an icon to add as input")
-                            Text("• Click one or more icons to add as many inputs and/or at as many times as desired")
-                            Text("• Euthyroid - Normal hormone responses are simulated, shown can be plotted and saved in Step 3 and results can be plotted and saved")
-                        }
-                        .font(.footnote)
-                    }
+                
                     .padding()
                     
                     // Display sections for added doses, reading from simulationData
