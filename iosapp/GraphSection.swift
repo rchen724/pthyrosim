@@ -5,17 +5,20 @@ struct GraphSection: View {
     let title: String
     let yLabel: String
     let xLabel: String
-    
+
     // Primary data series (Run 1)
     let values: [(Double, Double)]
     let color: Color
-    
+
     // Secondary data series (Run 2)
     let secondaryValues: [(Double, Double)]?
     let secondaryColor: Color?
 
-    let initialYAxisRange: ClosedRange<Double>
-    let initialXAxisRange: ClosedRange<Double>
+    // Axis ranges
+    let yAxisRange: ClosedRange<Double>
+    let xAxisRange: ClosedRange<Double>
+
+    @Binding var showNormalRange: Bool
 
     // State variables for zoom/pan
     @State private var currentXDomain: ClosedRange<Double>
@@ -28,7 +31,7 @@ struct GraphSection: View {
     private let minDomainSpanFactor: CGFloat = 0.01 // Max zoom in
     private let maxDomainSpanFactor: CGFloat = 20.0  // Max zoom out
 
-    init(title: String, yLabel: String, xLabel: String, values: [(Double, Double)], color: Color, secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil, yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>) {
+    init(title: String, yLabel: String, xLabel: String, values: [(Double, Double)], color: Color, secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil, yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>, showNormalRange: Binding<Bool>) {
         self.title = title
         self.yLabel = yLabel
         self.xLabel = xLabel
@@ -36,20 +39,29 @@ struct GraphSection: View {
         self.color = color
         self.secondaryValues = secondaryValues
         self.secondaryColor = secondaryColor
-        
-        let validatedXAxisRange = (xAxisRange.lowerBound < xAxisRange.upperBound) ? xAxisRange : (xAxisRange.lowerBound...(xAxisRange.lowerBound + 1.0))
-        let validatedYAxisRange = (yAxisRange.lowerBound < yAxisRange.upperBound) ? yAxisRange : (yAxisRange.lowerBound...(yAxisRange.lowerBound + 1.0))
+        self._showNormalRange = showNormalRange
 
-        self.initialXAxisRange = validatedXAxisRange
-        self.initialYAxisRange = validatedYAxisRange
+        // --- FIX: Validate the incoming ranges to prevent crashes ---
         
-        // Default zoom to the last 2 days to show oscillations more clearly.
-        let maxTimeInDays = validatedXAxisRange.upperBound
-        let startTimeInDays = max(validatedXAxisRange.lowerBound, maxTimeInDays - 2)
-        let zoomedInXAxisRange = startTimeInDays...maxTimeInDays
+        // 1. Correct the ranges if lowerBound > upperBound
+        let correctedYAxisRange = (yAxisRange.lowerBound <= yAxisRange.upperBound) ? yAxisRange : (yAxisRange.upperBound...yAxisRange.lowerBound)
+        let correctedXAxisRange = (xAxisRange.lowerBound <= xAxisRange.upperBound) ? xAxisRange : (xAxisRange.upperBound...xAxisRange.lowerBound)
 
-        _currentXDomain = State(initialValue: zoomedInXAxisRange.lowerBound < zoomedInXAxisRange.upperBound ? zoomedInXAxisRange : validatedXAxisRange)
-        _currentYDomain = State(initialValue: validatedYAxisRange)
+        self.yAxisRange = correctedYAxisRange
+        self.xAxisRange = correctedXAxisRange
+        
+        // 2. Ensure the ranges have a non-zero span for the chart view
+        let finalYRange = (correctedYAxisRange.lowerBound < correctedYAxisRange.upperBound)
+            ? correctedYAxisRange
+            : (correctedYAxisRange.lowerBound...(correctedYAxisRange.lowerBound + 1.0))
+        
+        let finalXRange = (correctedXAxisRange.lowerBound < correctedXAxisRange.upperBound)
+            ? correctedXAxisRange
+            : (correctedXAxisRange.lowerBound...(correctedXAxisRange.lowerBound + 1.0))
+
+        // 3. Initialize the state for zoom/pan
+        _currentYDomain = State(initialValue: finalYRange)
+        _currentXDomain = State(initialValue: finalXRange)
     }
     
     var body: some View {
@@ -58,7 +70,6 @@ struct GraphSection: View {
                 Text(title)
                     .font(.headline)
                 Spacer()
-                // Legend for the two lines
                 if secondaryValues != nil {
                     HStack(spacing: 15) {
                         HStack(spacing: 4) {
@@ -75,7 +86,6 @@ struct GraphSection: View {
             }
             .padding(.horizontal)
 
-
             if values.isEmpty {
                 ContentUnavailableView("No Data", systemImage: "chart.bar.xaxis.ascending")
                     .frame(height: 250)
@@ -83,8 +93,7 @@ struct GraphSection: View {
                 ZStack(alignment: .bottomTrailing) {
                     GeometryReader { chartGeometry in
                         Chart {
-                             // Shaded area for the normal range
-                             if let range = normalRange(for: title) {
+                             if showNormalRange, let range = normalRange(for: title) {
                                  RectangleMark(
                                     xStart: .value("X Start", currentXDomain.lowerBound),
                                     xEnd: .value("X End", currentXDomain.upperBound),
@@ -94,20 +103,26 @@ struct GraphSection: View {
                                  .foregroundStyle(Color.yellow.opacity(0.2))
                              }
 
-                            // Draw primary line (Run 1)
-                            ForEach(Array(values.enumerated()), id: \.offset) { _, point in
-                                LineMark(x: .value(xLabel, point.0), y: .value(yLabel, point.1))
-                                    .foregroundStyle(color)
-                                    .interpolationMethod(.catmullRom)
+                            ForEach(Array(values.enumerated()), id: \.offset) { index, dataPoint in
+                                // dataPoint is now the (time, value) tuple from your `values` array
+                                LineMark(
+                                    x: .value(xLabel, dataPoint.0), // Use dataPoint.0 for Time
+                                    y: .value(yLabel, dataPoint.1)  // Use dataPoint.1 for Value
+                                )
+                                .foregroundStyle(color)
+                                .interpolationMethod(.catmullRom)
                             }
-
-                            // Draw secondary line (Run 2), if it exists
+                            
                             if let secondary = secondaryValues, let secColor = secondaryColor {
-                                ForEach(Array(secondary.enumerated()), id: \.offset) { _, point in
-                                    LineMark(x: .value(xLabel, point.0), y: .value(yLabel, point.1))
-                                        .foregroundStyle(secColor)
-                                        .interpolationMethod(.catmullRom)
-                                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                                ForEach(Array(secondary.enumerated()), id: \.offset) { index, dataPoint in
+                                    // dataPoint is the (time, value) tuple
+                                    LineMark(
+                                        x: .value(xLabel, dataPoint.0), // Use dataPoint.0 for Time
+                                        y: .value(yLabel, dataPoint.1)  // Use dataPoint.1 for Value
+                                    )
+                                    .foregroundStyle(secColor)
+                                    .interpolationMethod(.catmullRom)
+                                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                                 }
                             }
                         }
@@ -158,9 +173,7 @@ struct GraphSection: View {
             resetZoomAndPan()
         }
     }
-    
-    // MARK: - Helper Functions
-    
+
     private func zoom(by scaleFactor: CGFloat) {
         let newXSpan = currentXDomain.span * scaleFactor
         let newYSpan = currentYDomain.span * scaleFactor
@@ -172,14 +185,12 @@ struct GraphSection: View {
     private func updateDomains(chartRenderSize: CGSize) {
         guard let xStart = gestureStartDomainX, let yStart = gestureStartDomainY else { return }
         
-        // --- Panning ---
         let xTranslation = currentTranslation.width * (xStart.span / chartRenderSize.width)
         let yTranslation = -currentTranslation.height * (yStart.span / chartRenderSize.height)
         
         let newXLower = xStart.lowerBound - xTranslation
         let newYLower = yStart.lowerBound - yTranslation
         
-        // --- Zooming ---
         let newXSpan = xStart.span / currentMagnification
         let newYSpan = yStart.span / currentMagnification
         
@@ -188,37 +199,27 @@ struct GraphSection: View {
     }
 
     private func resetZoomAndPan() {
-        let maxTimeInDays = initialXAxisRange.upperBound
-        let startTimeInDays = max(initialXAxisRange.lowerBound, maxTimeInDays - 2)
-        currentXDomain = startTimeInDays...maxTimeInDays
-        currentYDomain = initialYAxisRange
+        currentXDomain = xAxisRange
+        currentYDomain = yAxisRange
     }
     
-    /// Returns the normal physiological range for a given hormone.
     func normalRange(for hormone: String) -> ClosedRange<Double>? {
         switch hormone {
         case "T4":
-            // From common clinical values, supported by graph visuals in the paper.
             return 50.0...120.0
         case "Free T4":
-            // Using common clinical reference ranges for FT4 in µg/L.
             return 10.0...25.0
         case "T3":
-            // Based on graph visuals in the paper.
             return 0.8...1.8
         case "Free T3":
-            // Using common clinical reference ranges for FT3 in µg/L.
             return 2.3...4.2
         case "TSH":
-            // Based on the paper stating the normal range is approximately 0.4 to 4.5 mU/L.
             return 0.4...4.5
         default:
             return nil
         }
     }
 }
-
-// MARK: - Helper Extensions
 
 extension ClosedRange where Bound: FloatingPoint {
     var span: Bound { upperBound - lowerBound }

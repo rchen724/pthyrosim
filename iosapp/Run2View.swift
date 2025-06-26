@@ -95,11 +95,11 @@ struct Run2View: View {
                 t4Secretion: t4Sec, t3Secretion: t3Sec, gender: gender,
                 height: heightInMeters, weight: weightInKg, days: days,
                 t3OralDoses: simulationData.t3oralinputs,
-                t3IVDoses: simulationData.t3ivinputs,
-                t3InfusionDoses: simulationData.t3infusioninputs,
                 t4OralDoses: simulationData.t4oralinputs,
+                t3IVDoses: simulationData.t3ivinputs,
                 t4IVDoses: simulationData.t4ivinputs,
-                t4InfusionDoses: simulationData.t4infusioninputs
+                t3InfusionDoses: simulationData.t3infusioninputs, // Add this
+                t4InfusionDoses: simulationData.t4infusioninputs  // Add this
             )
             let result = simulator.runSimulation(recalculateIC: isInitialConditionsOn)
             

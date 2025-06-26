@@ -41,16 +41,16 @@ struct SimulationView: View {
                     .toggleStyle(SwitchToggleStyle(tint: .red))
 
                     Button(action: {
-                        guard let t4Sec = Double(t4Secretion),
-                              let t3Sec = Double(t3Secretion),
-                              let h_val = Double(heightString),
-                              let w_val = Double(weightString),
-                              let d = Int(simulationDays), d > 0,
-                              !gender.isEmpty else {
-                            print("Invalid input values - check Step 1 settings.")
-                            return
-                        }
-
+                       guard let t4Sec = Double(t4Secretion),
+                             let t3Sec = Double(t3Secretion),
+                             let h_val = Double(heightString),
+                             let w_val = Double(weightString),
+                             let d = Int(simulationDays), d > 0,
+                             !gender.isEmpty else {
+                           print("Invalid input values - check Step 1 settings.")
+                           return
+                       }
+                        
                         // Convert height to meters
                         var heightInMeters: Double
                         switch heightUnit {
@@ -71,18 +71,22 @@ struct SimulationView: View {
                             weightInKg = w_val
                         }
 
+                        // Initialize the simulator with medication doses set to 0 for the euthyroid graph
                         let simulator = ThyroidSimulator(
-                            t4Secretion: t4Sec,
-                            t3Secretion: t3Sec,
-                            gender: gender,
-                            height: heightInMeters,
-                            weight: weightInKg,
-                            days: d
-                        )
-                        let result = simulator.runSimulation(
-                            recalculateIC: isInitialConditionsOn,
-                            logTSHOutput: false
-                        )
+                                t4Secretion: t4Sec,
+                                t3Secretion: t3Sec,
+                                gender: gender,
+                                height: heightInMeters,
+                                weight: weightInKg,
+                                days: d,
+                                t3OralDoses: [],
+                                t4OralDoses: [],
+                                t3IVDoses: [],
+                                t4IVDoses: [],
+                                t3InfusionDoses: [], // Add this
+                                t4InfusionDoses: []  // Add this
+                            )
+                            let result = simulator.runSimulation(recalculateIC: isInitialConditionsOn)
                         
                         if result.time.isEmpty {
                             print("Simulation produced no results. Check parameters.")

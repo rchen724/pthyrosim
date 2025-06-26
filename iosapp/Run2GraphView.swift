@@ -1,73 +1,85 @@
 import SwiftUI
+import Charts
 
 struct Run2GraphView: View {
     let run1Result: ThyroidSimulationResult
     let run2Result: ThyroidSimulationResult
     let simulationDurationDays: Int
 
-    @State private var showFreeHormones: Bool = false
+    // **FIX**: Default to showing free hormones
+    @State private var showFreeHormones: Bool = true
+    @State private var showNormalRange: Bool = true
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                Text("Run 1 vs. Run 2")
-                    .font(.largeTitle).fontWeight(.bold).padding(.top)
-
-                Toggle(isOn: $showFreeHormones) {
-                    Text("Show Free Hormones")
-                }.padding(.horizontal).toggleStyle(SwitchToggleStyle(tint: .blue))
-
-                let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
+            VStack(spacing: 10) {
+                Text("Comparison of Hormone Levels")
+                    .font(.title2).bold()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
-                let t4Values1 = showFreeHormones ? run1Result.ft4 : run1Result.t4
-                let t4Values2 = showFreeHormones ? run2Result.ft4 : run2Result.t4
-                let t3Values1 = showFreeHormones ? run1Result.ft3 : run1Result.t3
-                let t3Values2 = showFreeHormones ? run2Result.ft3 : run2Result.t3
+                HStack {
+                    Toggle("Show Free Hormones", isOn: $showFreeHormones)
+                    Toggle("Show Normal Range", isOn: $showNormalRange)
+                }
+                .padding(.bottom, 10)
+                
+                let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
 
+                let t4Data1 = showFreeHormones ? run1Result.ft4 : run1Result.t4
+                let t4Data2 = showFreeHormones ? run2Result.ft4 : run2Result.t4
+                
+                let t3Data1 = showFreeHormones ? run1Result.ft3 : run1Result.t3
+                let t3Data2 = showFreeHormones ? run2Result.ft3 : run2Result.t3
+                
+                let tshData1 = run1Result.tsh
+                let tshData2 = run2Result.tsh
 
                 GraphSection(
                     title: showFreeHormones ? "Free T4" : "T4",
-                    yLabel: showFreeHormones ? "FT4 (µg/L)" : "T4 (µg/L)",
+                    yLabel: showFreeHormones ? "FT4 (ng/dL)" : "T4 (µg/L)",
                     xLabel: "Days",
-                    values: run1Result.time.indices.map { (run1Result.time[$0], t4Values1[$0]) },
+                    values: run1Result.time.indices.map { (run1Result.time[$0], t4Data1[$0]) },
                     color: .blue,
-                    secondaryValues: run2Result.time.indices.map { (run2Result.time[$0], t4Values2[$0]) },
-                    secondaryColor: .purple,
-                    yAxisRange: calculateYAxisDomain(for: t4Values1, and: t4Values2, title: showFreeHormones ? "Free T4" : "T4"),
-                    xAxisRange: effectiveXAxisRange
+                    secondaryValues: run2Result.time.indices.map { (run2Result.time[$0], t4Data2[$0]) },
+                    secondaryColor: .cyan,
+                    yAxisRange: calculateYAxisDomain(for: t4Data1 + t4Data2, title: showFreeHormones ? "Free T4" : "T4"),
+                    xAxisRange: effectiveXAxisRange,
+                    showNormalRange: $showNormalRange
                 )
 
                 GraphSection(
                     title: showFreeHormones ? "Free T3" : "T3",
-                    yLabel: showFreeHormones ? "FT3 (µg/L)" : "T3 (µg/L)",
+                    yLabel: showFreeHormones ? "FT3 (pg/mL)" : "T3 (ng/dL)",
                     xLabel: "Days",
-                    values: run1Result.time.indices.map { (run1Result.time[$0], t3Values1[$0]) },
+                    values: run1Result.time.indices.map { (run1Result.time[$0], t3Data1[$0]) },
                     color: .green,
-                    secondaryValues: run2Result.time.indices.map { (run2Result.time[$0], t3Values2[$0]) },
-                    secondaryColor: .orange,
-                    yAxisRange: calculateYAxisDomain(for: t3Values1, and: t3Values2, title: showFreeHormones ? "Free T3" : "T3"),
-                    xAxisRange: effectiveXAxisRange
+                    secondaryValues: run2Result.time.indices.map { (run2Result.time[$0], t3Data2[$0]) },
+                    secondaryColor: .mint,
+                    yAxisRange: calculateYAxisDomain(for: t3Data1 + t3Data2, title: showFreeHormones ? "Free T3" : "T3"),
+                    xAxisRange: effectiveXAxisRange,
+                    showNormalRange: $showNormalRange
                 )
 
                 GraphSection(
                     title: "TSH",
                     yLabel: "TSH (mU/L)",
                     xLabel: "Days",
-                    values: run1Result.time.indices.map { (run1Result.time[$0], run1Result.tsh[$0]) },
+                    values: run1Result.time.indices.map { (run1Result.time[$0], tshData1[$0]) },
                     color: .red,
-                    secondaryValues: run2Result.time.indices.map { (run2Result.time[$0], run2Result.tsh[$0]) },
-                    secondaryColor: .pink,
-                    yAxisRange: calculateYAxisDomain(for: run1Result.tsh, and: run2Result.tsh, title: "TSH"),
-                    xAxisRange: effectiveXAxisRange
+                    secondaryValues: run2Result.time.indices.map { (run2Result.time[$0], tshData2[$0]) },
+                    secondaryColor: .orange,
+                    yAxisRange: calculateYAxisDomain(for: tshData1 + tshData2, title: "TSH"),
+                    xAxisRange: effectiveXAxisRange,
+                    showNormalRange: $showNormalRange
                 )
             }
             .padding()
         }
-        .navigationTitle("Superimposed Results")
+        .navigationTitle("Dosing Simulation")
         .navigationBarTitleDisplayMode(.inline)
     }
     
-    // MARK: - Helper Functions
+    // MARK: - Helper Functions to Prevent Crashing
     
     private func getNormalRange(for hormone: String) -> ClosedRange<Double>? {
         switch hormone {
@@ -79,37 +91,47 @@ struct Run2GraphView: View {
         default: return nil
         }
     }
+
     
+    /// **FIXED**: Safely calculates a dynamic range for an array of values, handling empty, single-value, and non-finite numbers.
     private func dynamicRange(for values: [Double]) -> ClosedRange<Double> {
-        guard let minVal = values.min(), let maxVal = values.max(), minVal <= maxVal else {
-            let defaultVal = values.first ?? 0.0
-            return (defaultVal - 1)...(defaultVal + 1)
+        let finiteValues = values.filter { $0.isFinite }
+
+        guard let minVal = finiteValues.min(), let maxVal = finiteValues.max() else {
+            return 0.0...1.0
         }
+
         if minVal == maxVal {
-            return (minVal - 1)...(maxVal + 1)
+            let buffer = abs(minVal * 0.5) > 0 ? abs(minVal * 0.5) : 1.0
+            return (minVal - buffer)...(maxVal + buffer)
         }
+
         let buffer = (maxVal - minVal) * 0.1
-        let effectiveBuffer = buffer > 0 ? buffer : 1.0
-        
-        let lower = minVal - effectiveBuffer
-        let upper = maxVal + effectiveBuffer
-        
-        return (minVal >= 0 && lower < 0 ? 0 : lower)...upper
+        let lower = minVal - buffer
+        let upper = maxVal + buffer
+        let finalLower = (minVal >= 0 && lower < 0) ? 0 : lower
+
+        return finalLower...upper
     }
 
-    private func calculateYAxisDomain(for run1Values: [Double], and run2Values: [Double], title: String) -> ClosedRange<Double> {
-        let combinedData = run1Values + run2Values
-        let dataRange = dynamicRange(for: combinedData)
-        
-        guard let normalRange = getNormalRange(for: title) else {
+    /// **FIXED**: Calculates the final Y-axis domain, combining the data range and normal range safely.
+    private func calculateYAxisDomain(for values: [Double], title: String) -> ClosedRange<Double> {
+        let dataRange = dynamicRange(for: values)
+
+        guard showNormalRange, let normalRange = getNormalRange(for: title) else {
             return dataRange
         }
-        
+
         let lowerBound = min(dataRange.lowerBound, normalRange.lowerBound)
         let upperBound = max(dataRange.upperBound, normalRange.upperBound)
-        
         let padding = (upperBound - lowerBound) * 0.05
-        
-        return (lowerBound - padding)...(upperBound + padding)
+        let finalLower = lowerBound - padding
+        let finalUpper = upperBound + padding
+
+        if finalLower > finalUpper {
+            return dataRange
+        }
+
+        return finalLower...finalUpper
     }
 }
