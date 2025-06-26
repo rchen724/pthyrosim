@@ -77,7 +77,7 @@ struct T4OralPopupView: View {
                                         VStack(alignment: .leading, spacing: 10) {
                                             Text("Dose End Day or Time")
                                                 .frame(width: 150, alignment: .leading)
-                                            Text("E.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
+                                            Text("e.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
                                                 .font(.caption)
                                                 .foregroundColor(.gray)
                                                 .frame(width: 150, alignment: .trailing)

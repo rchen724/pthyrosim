@@ -41,17 +41,35 @@ struct Step2View: View {
                         .font(.title2.bold())
                     
                     VStack(alignment: .center, spacing: 12) {
-                        Text("HOW TO CONDUCT DOSING EXPERIMENT...")
+                        Text("HOW TO DO IT...")
                             .font(.headline)
                             .foregroundColor(.white)
 
-                        VStack(alignment: .center, spacing: 6) {
-                            Text("• T3 and/or T4 input dosing can be chosen")
-                            Text("as oral doses; OR intravenous (IV) bolus doses;")
-                            Text("OR infusion doses.")
-                            Text("• Click on an icon to add as input")
-                            Text("• Click one or more icons to add as many inputs")
-                            Text("and/or at as many times as desired")
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text("• ")
+                                    .font(.subheadline)
+                                VStack(alignment: .center){
+                                    Text("T3 and/or T4 input dosing can be chosen as oral;")
+                                        .font(.subheadline)
+                                    Text("OR intravenous (IV) bolus;")
+                                        .font(.subheadline)
+                                    Text("OR infusion doses.")
+                                        .font(.subheadline)
+                                }
+                            }
+
+                            HStack(alignment: .firstTextBaseline) {
+                                Text("• ")
+                                    .font(.subheadline)
+                                VStack(alignment: .center) {
+                                    Text("Click one or more icons to add as many inputs")
+                                        .font(.subheadline)
+                                    Text("and/or as many times as desired")
+                                        .font(.subheadline)
+                                }
+                                
+                            }
                         }
                         .font(.footnote)
                     }
