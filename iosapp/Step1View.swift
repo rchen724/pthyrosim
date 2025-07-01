@@ -13,17 +13,18 @@ struct Step1View: View {
     @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
 
     // New AppStorage for units
-    @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "CM"
-    @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "KG"
-
-    let genders = ["MALE", "FEMALE"]
-    let heightUnits = ["CM", "IN"]
-    let weightUnits = ["KG", "LB"]
-
-    // Scroll tracking state
+    @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "cm"
+    @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg"
+    
     @State private var scrollOffset: CGFloat = 0
     @State private var contentHeight: CGFloat = 1
     @State private var scrollViewHeight: CGFloat = 1
+
+    let genders = ["MALE", "FEMALE"]
+    let heightUnits = ["cm", "in"]
+    let weightUnits = ["lb", "kg"]
+
+    // Scroll tracking state
 
     var body: some View {
         NavigationView {
@@ -44,18 +45,21 @@ struct Step1View: View {
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .padding(.top)
-                        VStack(alignment: .center, spacing: 6) {
-                            HStack(alignment: .firstTextBaseline) {
-                                Text("• ")
+                        VStack(alignment: .leading, spacing: 6) {
+
+                            HStack(alignment: .top, spacing: 4) {
+                                // Bullet stays leading
+                                Text("•")
                                     .font(.subheadline)
                                     .foregroundColor(.white)
-                                VStack(alignment: .center){
-                                    Text("To simulate hypothyroidism or malabsorption conditions")
-                                        .font(.subheadline)
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.center)
+                                    .frame(width: 20, alignment: .leading) // Fixed width to separate from text
 
-                                }
+                                // Centered text
+                                Text("To simulate hypothyroidism or malabsorption conditions")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity, alignment: .center) // Centers within available space
                             }
 
                             HStack(alignment: .firstTextBaseline) {
@@ -81,11 +85,12 @@ struct Step1View: View {
                                         .multilineTextAlignment(.center)
                                 }
                             }
-                            Spacer()
-                            Text("(Normal Defaults Shown)")
-                                .font(.subheadline)
-                                .foregroundColor(.white)
+
                         }
+                        Text("(Normal Defaults Shown)")
+                            .font(.footnote)
+                            .foregroundColor(.white)
+                            .frame(alignment: .center)
 
 
                         Group {
@@ -154,13 +159,13 @@ struct Step1View: View {
 
                             Text("When this switch is ON, initial conditions (IC) are recalculated. When this switch is OFF, initial conditions are set to euthyroid.")
                                 .font(.footnote)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white)
                         }
                         .padding()
 
                         Text("*Note: SR is capped at 125% because model is not validated for hyperthyroid conditions.")
                             .font(.footnote)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white)
                             .padding(.bottom, 30)
                     }
                     .background(
