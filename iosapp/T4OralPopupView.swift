@@ -94,7 +94,7 @@ struct T4OralPopupView: View {
                                             Text("Dosing Interval (days)")
                                                 .frame(width: 150, alignment: .leading)
                                                 .fixedSize(horizontal: false, vertical: true)
-                                            Text("E.g. 1, if daily dosing, 0.5 if twice-daily dosing, etc")
+                                            Text("e.g. 1, if daily dosing, 0.5 if twice-daily dosing, etc")
                                                 .font(.caption)
                                                 .foregroundColor(.gray)
                                                 .frame(width: 150, alignment: .trailing)
