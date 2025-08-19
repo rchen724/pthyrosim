@@ -42,7 +42,7 @@ struct Step2View: View {
                     }
                     .frame(height: 0)
 
-                    Text("Simulated Dosing Experiment")
+                    Text("Simulated Dosing Experiments")
                         .font(.title2.bold())
                         .foregroundColor(.white)
 
@@ -73,6 +73,18 @@ struct Step2View: View {
                                 VStack(alignment: .center) {
                                     Text("Click one or more icons to add as many inputs")
                                     Text("and/or as many times as desired")
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                            }
+                            HStack(alignment: .firstTextBaseline) {
+                                Text("• ")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                VStack(alignment: .center) {
+                                    Text("A second dosing experiment can be run by")
+                                    Text("clicking on next to last icon below")
+                                    
                                 }
                                 .font(.subheadline)
                                 .foregroundColor(.white)
@@ -310,17 +322,29 @@ struct Step2View: View {
         .sheet(item: $activePopup) { popup in
             switch popup {
             case .T3OralInputs:
-                T3OralPopupView { simulationData.t3oralinputs.append($0) }
+                T3OralPopupView { newDose in
+                    self.simulationData.t3oralinputs.append(newDose)
+                }
             case .T3IVInputs:
-                T3IVPopupView { simulationData.t3ivinputs.append($0) }
+                T3IVPopupView { newDose in
+                    self.simulationData.t3ivinputs.append(newDose)
+                }
             case .T3InfusionInputs:
-                T3InfusionPopupView { simulationData.t3infusioninputs.append($0) }
+                T3InfusionPopupView { newDose in
+                    self.simulationData.t3infusioninputs.append(newDose)
+                }
             case .T4OralInputs:
-                T4OralPopupView { simulationData.t4oralinputs.append($0) }
+                T4OralPopupView { newDose in
+                    self.simulationData.t4oralinputs.append(newDose)
+                }
             case .T4IVInputs:
-                T4IVPopupView { simulationData.t4ivinputs.append($0) }
+                T4IVPopupView { newDose in
+                    self.simulationData.t4ivinputs.append(newDose)
+                }
             case .T4InfusionInputs:
-                T4InfusionPopupView { simulationData.t4infusioninputs.append($0) }
+                T4InfusionPopupView { newDose in
+                    self.simulationData.t4infusioninputs.append(newDose)
+                }
             }
         }
     }

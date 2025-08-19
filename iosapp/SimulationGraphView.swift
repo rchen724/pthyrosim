@@ -1,7 +1,6 @@
 import SwiftUI
 import Charts
 
-// MARK: - HormoneType Enum
 private enum HormoneType: String, CaseIterable {
     case total = "Total"
     case free = "Free"
@@ -11,37 +10,62 @@ struct SimulationGraphView: View {
     let result: ThyroidSimulationResult
     let simulationDurationDays: Int
 
-    // MARK: - State Variables
     @State private var selectedHormoneType: HormoneType = .total
     @State private var showNormalRange: Bool = true
-
-    // MARK: - Data Preparation & Filtering
     
-    /// **FIX 1: This is the key fix.**
-    /// This function filters out any data points that are not finite, preventing crashes.
-    private func filteredData(for values: [Double]) -> [(Double, Double)] {
-        return zip(result.time, values)
-            .filter { $0.1.isFinite }
+    @State private var pdfURL: URL?
+    @State private var showShareSheet = false
+
+    // --- CORRECTED VIEW FOR PDF EXPORT ---
+    // This view now contains ONLY the elements we want in the PDF, excluding the problematic UI controls.
+    private var viewToRender: some View {
+        VStack(spacing: 20) {
+            Text("Euthyroid Simulation")
+                .font(.largeTitle).fontWeight(.bold).padding(.top)
+
+            let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
+            
+            GraphSection(
+                title: selectedHormoneType == .free ? "Free T4" : "T4",
+                yLabel: selectedHormoneType == .free ? "FT4 (ng/dL)" : "T4 (µg/L)",
+                xLabel: "Days",
+                values: t4GraphData,
+                color: .blue,
+                yAxisRange: calculateYAxisDomain(for: t4GraphData.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
+                xAxisRange: effectiveXAxisRange,
+                showNormalRange: $showNormalRange
+            )
+
+            GraphSection(
+                title: selectedHormoneType == .free ? "Free T3" : "T3",
+                yLabel: selectedHormoneType == .free ? "FT3 (pg/mL)" : "T3 (ng/dL)",
+                xLabel: "Days",
+                values: t3GraphData,
+                color: .green,
+                yAxisRange: calculateYAxisDomain(for: t3GraphData.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
+                xAxisRange: effectiveXAxisRange,
+                showNormalRange: $showNormalRange
+            )
+
+            GraphSection(
+                title: "TSH",
+                yLabel: "TSH (mU/L)",
+                xLabel: "Days",
+                values: tshGraphData,
+                color: .red,
+                yAxisRange: calculateYAxisDomain(for: tshGraphData.map { $0.1 }, title: "TSH"),
+                xAxisRange: effectiveXAxisRange,
+                showNormalRange: $showNormalRange
+            )
+        }
+        .padding()
+        .foregroundColor(.black)
+        .background(Color.white) // Ensure a solid white background for the PDF
     }
 
-    private var t4GraphData: [(Double, Double)] {
-        let sourceData = selectedHormoneType == .free ? result.ft4 : result.t4
-        return filteredData(for: sourceData)
-    }
-    
-    private var t3GraphData: [(Double, Double)] {
-        let sourceData = selectedHormoneType == .free ? result.ft3 : result.t3
-        return filteredData(for: sourceData)
-    }
-
-    private var tshGraphData: [(Double, Double)] {
-        return filteredData(for: result.tsh)
-    }
-
-    // MARK: - Body
+    // The body of the view remains the same for display on the screen
     var body: some View {
         ZStack {
-            // Set the background color to white
             Color.white.ignoresSafeArea()
 
             ScrollView {
@@ -49,27 +73,26 @@ struct SimulationGraphView: View {
                     Text("Euthyroid Simulation")
                         .font(.largeTitle).fontWeight(.bold).padding(.top)
 
-                    // --- UI Controls ---
                     VStack(spacing: 15) {
                         Picker("Hormone Type", selection: $selectedHormoneType) {
-                            ForEach(HormoneType.allCases, id: \.self) {
-                                Text($0.rawValue)
-                            }
+                            ForEach(HormoneType.allCases, id: \.self) { Text($0.rawValue) }
                         }
                         .pickerStyle(.segmented)
                         .padding(.horizontal)
 
-                        Toggle(isOn: $showNormalRange) {
-                            Text("Show Normal Range")
-                                .fontWeight(.medium)
-                        }
-                        .padding(.horizontal)
+                        //Toggle(isOn: $showNormalRange) {
+                        //    Text("Show Normal Range").fontWeight(.medium)
+                        //}
+                        //.padding(.horizontal)
+                        Text("Normal ranges shown in yellow below")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        
                     }
                     .padding(.vertical, 10)
 
                     let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
                     
-                    // --- T4 Graph ---
                     GraphSection(
                         title: selectedHormoneType == .free ? "Free T4" : "T4",
                         yLabel: selectedHormoneType == .free ? "FT4 (ng/dL)" : "T4 (µg/L)",
@@ -80,9 +103,7 @@ struct SimulationGraphView: View {
                         xAxisRange: effectiveXAxisRange,
                         showNormalRange: $showNormalRange
                     )
-                    .chartYAxis { AxisMarks(position: .leading) }
 
-                    // --- T3 Graph ---
                     GraphSection(
                         title: selectedHormoneType == .free ? "Free T3" : "T3",
                         yLabel: selectedHormoneType == .free ? "FT3 (pg/mL)" : "T3 (ng/dL)",
@@ -93,9 +114,7 @@ struct SimulationGraphView: View {
                         xAxisRange: effectiveXAxisRange,
                         showNormalRange: $showNormalRange
                     )
-                    .chartYAxis { AxisMarks(position: .leading) }
 
-                    // --- TSH Graph ---
                     GraphSection(
                         title: "TSH",
                         yLabel: "TSH (mU/L)",
@@ -106,7 +125,6 @@ struct SimulationGraphView: View {
                         xAxisRange: effectiveXAxisRange,
                         showNormalRange: $showNormalRange
                     )
-                    .chartYAxis { AxisMarks(position: .leading) }
                 }
                 .padding()
                 .foregroundColor(.black)
@@ -114,10 +132,41 @@ struct SimulationGraphView: View {
         }
         .navigationTitle("Euthyroid Simulation")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            // --- CORRECTED BUTTON ACTION ---
+                            // Use a Task to run the async PDF rendering
+                            Task {
+                                // 'await' waits for the function to finish and return the URL
+                                let url = await renderViewToPDF(view: viewToRender)
+                                self.pdfURL = url
+                                self.showShareSheet = true
+                            }
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                    }
+                }
+                .sheet(isPresented: $showShareSheet) {
+                    if let pdfURL {
+                        ShareSheet(activityItems: [pdfURL])
+                    }
+                }
     }
 
-     // MARK: - Helper Functions for Axis Range
-    
+    // Helper functions remain the same
+    private var t4GraphData: [(Double, Double)] {
+        let sourceData = selectedHormoneType == .free ? result.ft4 : result.t4
+        return zip(result.time, sourceData).filter { $0.1.isFinite }
+    }
+    private var t3GraphData: [(Double, Double)] {
+        let sourceData = selectedHormoneType == .free ? result.ft3 : result.t3
+        return zip(result.time, sourceData).filter { $0.1.isFinite }
+    }
+    private var tshGraphData: [(Double, Double)] {
+        return zip(result.time, result.tsh).filter { $0.1.isFinite }
+    }
     private func getNormalRange(for hormone: String) -> ClosedRange<Double>? {
         switch hormone {
         case "T4": return 50.0...120.0
@@ -128,39 +177,24 @@ struct SimulationGraphView: View {
         default: return nil
         }
     }
-
-    /// **FIX 2: This function is now safer**
-    /// It calculates a dynamic range only from finite values.
     private func dynamicRange(for values: [Double]) -> ClosedRange<Double> {
-        guard let minVal = values.min(), let maxVal = values.max() else {
-            return 0...1
-        }
-        
+        guard let minVal = values.min(), let maxVal = values.max() else { return 0...1 }
         if minVal == maxVal {
             let buffer = abs(minVal * 0.1) > 0 ? abs(minVal * 0.1) : 1.0
             return (minVal - buffer)...(maxVal + buffer)
         }
-        
         let buffer = (maxVal - minVal) * 0.1
-        let lower = minVal - buffer
-        let upper = maxVal + buffer
-        
-        return (minVal >= 0 && lower < 0 ? 0 : lower)...upper
+        return (minVal - buffer)...(maxVal + buffer)
     }
-
     private func calculateYAxisDomain(for values: [Double], title: String) -> ClosedRange<Double> {
-        // Since the values are already filtered, this calculation is much safer.
         let dataRange = dynamicRange(for: values)
-        
+        var upperBound: Double
         if showNormalRange, let normalRange = getNormalRange(for: title) {
-            let lowerBound = min(dataRange.lowerBound, normalRange.lowerBound)
-            let upperBound = max(dataRange.upperBound, normalRange.upperBound)
-            
-            let padding = abs(upperBound - lowerBound) * 0.05
-            
-            return (lowerBound - padding)...(upperBound + padding)
+            upperBound = max(dataRange.upperBound, normalRange.upperBound)
+        } else {
+            upperBound = dataRange.upperBound
         }
-        
-        return dataRange
+        let padding = abs(upperBound) * 0.05
+        return 0...(upperBound + padding)
     }
 }

@@ -42,11 +42,20 @@ struct IntroView: View {
             Color.black.ignoresSafeArea(edges: [.top, .horizontal]) // Keep bottom safe area for nav bar
 
             VStack(spacing: 30) {
-                Text("p-THYROSIM")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.top)
+                           // --- MODIFICATION START ---
+                           // This new VStack groups the title and subtitle together
+                           // with a smaller, custom spacing.
+                           VStack(spacing: 2) {
+                               Text("p-THYROSIM")
+                                   .font(.title2)
+                                   .fontWeight(.semibold)
+                                   .foregroundColor(.white)
+                               
+                               Text("iOS Version 1.0 *")
+                                   .font(.subheadline)
+                                   .foregroundColor(.white)
+                           }
+                           .padding(.top)
 
                 VStack(alignment: .center, spacing: 24) {
                     // ScrollView with custom scrollbar for the big block of text

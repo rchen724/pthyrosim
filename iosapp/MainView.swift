@@ -30,7 +30,7 @@ struct MainView: View {
             Step2View()
                 .tabItem {
                     Image(systemName: "pills.fill")
-                    Text("Dosing")
+                    Text("2nd Dosing")
                 }
                 .tag(3)
 

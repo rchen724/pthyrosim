@@ -6,6 +6,8 @@ struct SimulationView: View {
 
     @AppStorage("t4Secretion") private var t4Secretion: String = "100"
     @AppStorage("t3Secretion") private var t3Secretion: String = "100"
+    @AppStorage("t4Absorption") private var t4Absorption: String = "88" // Added
+    @AppStorage("t3Absorption") private var t3Absorption: String = "88" // Added
     @AppStorage("height") private var heightString: String = "170"
     @AppStorage("weight") private var weightString: String = "70"
     @AppStorage("selectedHeightUnit") private var heightUnit: String = "cm"
@@ -43,6 +45,8 @@ struct SimulationView: View {
                     Button(action: {
                        guard let t4Sec = Double(t4Secretion),
                              let t3Sec = Double(t3Secretion),
+                             let t4Abs = Double(t4Absorption),
+                             let t3Abs = Double(t3Absorption),
                              let h_val = Double(heightString),
                              let w_val = Double(weightString),
                              let d = Int(simulationDays), d > 0,
@@ -75,6 +79,8 @@ struct SimulationView: View {
                         let simulator = ThyroidSimulator(
                                 t4Secretion: t4Sec,
                                 t3Secretion: t3Sec,
+                                t4Absorption:t4Abs,
+                                t3Absorption: t3Abs,
                                 gender: gender,
                                 height: heightInMeters,
                                 weight: weightInKg,
@@ -84,9 +90,11 @@ struct SimulationView: View {
                                 t3IVDoses: [],
                                 t4IVDoses: [],
                                 t3InfusionDoses: [], // Add this
-                                t4InfusionDoses: []  // Add this
+                                t4InfusionDoses: [],
+                                isInitialConditionsOn: isInitialConditionsOn // This line was missing
+// Add this
                             )
-                            let result = simulator.runSimulation(recalculateIC: isInitialConditionsOn)
+                            let result = simulator.runSimulation()
                         
                         if result.time.isEmpty {
                             print("Simulation produced no results. Check parameters.")
@@ -95,6 +103,11 @@ struct SimulationView: View {
                         
                         simResult = result
                         simulationData.run1Result = result // Store result in shared data
+                        if let finalState = result.q_final {
+                                print("✅ RUN 1 FINAL STATE (q_final): \(finalState)")
+                            } else {
+                                print("❌ RUN 1 ERROR: Final state is nil!")
+                            } 
                         navigateToGraph = true
                     }) {
                         Text("START SIMULATION")

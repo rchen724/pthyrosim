@@ -1,94 +1,121 @@
+// PatientParams.swift (Corrected & Final)
 import Foundation
 
 struct ThyrosimConstants {
-    // MARK: - Patient-Independent Model Parameters
+    // MARK: - Patient-Independent Model Parameters (All rates are per HOUR)
+    // Values are sourced from the Python script and converted from per-day to per-hour rates by dividing by 24.
 
-    // Secretion & Degradation
-    static let S4: Double = 0.00278      // T4 secretion parameter
-    static let S3: Double = 0.0015       // T3 secretion parameter (direct)
-    static let kDegT4: Double = 0.1      // T4 degradation rate constant (in plasma)
-    static let kDegT3: Double = 0.8      // T3 degradation rate constant (in plasma)
-    static let kDegTSH: Double = 0.1     // Basal TSH degradation rate constant
+    static let S4: Double = (0.06648 * 17) / 24.0
+    static let S3: Double = (0.008064 * 17) / 24.0
+    static let kDegT4: Double = 0.4536 / 24.0 // k02 in Python
 
-    // TSH Secretion Sub-model (Brain-Pituitary)
-    static let B0: Double = 450.0        // Basal TSH secretion rate
-    static let A0: Double = 220.0        // Amplitude of TSH circadian rhythm
-    static let Km_SR_TSH: Double = 3.1   // Michaelis-Menten constant for TSH suppression by T3
-    static let m_SR_TSH: Double = 6.29   // Hill coefficient for TSH suppression
-    static let KCIRC: Double = 3.0       // T3 concentration for half-max circadian effect
-    static let nHill_CIRC: Double = 5.68 // Hill coefficient for fCIRC
-    static let k7: Double = 0.0589       // T3 transport/conversion param in brain (k3 in old code)
-    static let Kf4_brain: Double = 8.5   // Hill constant for T4 to T3 conversion in brain
-    static let k_deg_T3B: Double = 0.05  // T3 degradation in brain
-    static let f_LAG: Double = 0.1       // Lag parameter for T3 effect in brain
+    // TSH Secretion Sub-model
+    static let B0: Double = 10800.0 / 24.0
+    static let A0: Double = 5272.8 / 24.0
+    static let phi: Double = -0.154583 // This is a phase shift, unitless
+    static let kDegTSH: Double = 12.72 / 24.0 // kdegTSH-HYPO
+    static let VmaxTSH: Double = 5.424 / 24.0
+    static let K50TSH: Double = 23.0
+    static let k7: Double = 1.41072 / 24.0 // k3 in Python
+    static let T4P_eu: Double = 0.29
+    static let T3P_eu: Double = 0.006
+    static let k_deg_T3B: Double = 0.888 / 24.0 // KdegT3B
+    static let f_LAG_base: Double = 0.0816 / 24.0 // KLAG-HYPO
+    static let KLAG: Double = 5.0 // Original value from Python params[41]
+    static let KCIRC: Double = 3.00101 // K_circ
+    static let Km_SR_TSH: Double = 3.0947 // K_srTSH
+    static let nHill_CIRC: Double = 5.6747 // n_hillcirc
+    static let m_SR_TSH: Double = 6.2908 // m_hillcirc
+    static let Kf4_brain: Double = 8.4983 // K_f4
+    static let l_hillf3: Double = 14.366 // l_hillf3
 
     // Free Hormone Calculation (Polynomial coefficients)
     static let ft4_A = 0.000289, ft4_B = 0.000214, ft4_C = 0.000128, ft4_D = -0.00000883
-    static let ft3_a = 0.015,    ft3_b = 0.002,    ft3_c = -0.000015,  ft3_d = 0.0000002
+    static let ft3_a = 0.00395, ft3_b = 0.00185, ft3_c = 0.00061, ft3_d = -0.000505
 
-    // Inter-compartmental Transfer Rates (k_ij means from compartment i to j)
-    static let k21: Double = 0.0125  // T4 Fast -> Plasma
-    static let k12: Double = 0.0245  // T4 Plasma -> Fast
-    static let k31: Double = 0.0003  // T4 Slow -> Plasma
-    static let k13: Double = 0.0021  // T4 Plasma -> Slow
-    static let k54: Double = 0.09    // T3 Fast -> Plasma
-    static let k45: Double = 0.27    // T3 Plasma -> Fast
-    static let k64: Double = 0.001  // T3 Slow -> Plasma
-    static let k46: Double = 0.011  // T3 Plasma -> Slow
-    
-    // Deiodinase Parameters (T4 -> T3 conversion)
-    // D1 Fast Tissue
-    static let Vmax_D1_fast: Double = 1.81
-    static let Km_D1_fast: Double = 3.08
-    // D2 Fast Tissue
-    static let Vmax_D2_fast: Double = 0.8
-    static let Km_D2_fast: Double = 0.02
-    // D1 Slow Tissue
-    static let Vmax_D1_slow: Double = 0.2
-    static let Km_D1_slow: Double = 3.08
-    // D2 Slow Tissue
-    static let Vmax_D2_slow: Double = 0.01
-    static let Km_D2_slow: Double = 0.02
+    // Inter-compartmental rates (per hour)
+    static let k12: Double = 20.832 / 24.0
+    static let k13: Double = 2.592 / 24.0
+    static let k31free: Double = 14016.0 / 24.0
+    static let k21free: Double = 36072.0 / 24.0
+    static let k45: Double = 128.88 / 24.0
+    static let k46: Double = 1.6536 / 24.0
+    static let k64free: Double = 3048.0 / 24.0
+    static let k54free: Double = 49032.0 / 24.0
+
+    // Deiodinase Parameters
+    static let Vmax_D1_fast: Double = 0.2904 / 24.0
+    static let Km_D1_fast: Double = 2.85 // Original value from Python params[13]
+    static let Vmax_D1_slow: Double = 0.015912 / 24.0
+    static let Km_D1_slow: Double = 95.0 // Original value from Python params[15]
+    static let Vmax_D2_slow: Double = 0.01776 / 24.0 // Original value from Python params[16]
+    static let Km_D2_slow: Double = 0.075
 
     // Gut Absorption Model
-    static let k_pill_T4: Double = 1.0
-    static let k_gut_T4: Double = 1.0
-    static let k_absorb_T4: Double = 0.05
-    
-    static let k_pill_T3: Double = 1.0
-    static let k_gut_T3: Double = 1.0
-    static let k_absorb_T3: Double = 0.05
+    static let k_pill_T4: Double = 31.2 / 24.0 // k4dissolve
+    static let k_excrete_T4: Double = 2.88 / 24.0 // k4excrete
+    static let k_absorb_T4: Double = 21.12 / 24.0 // k4absorb
+    static let k_pill_T3: Double = 42.72 / 24.0 // k3dissolve
+    static let k_excrete_T3: Double = 2.88 / 24.0 // k3excrete
+    static let k_absorb_T3: Double = 21.12 / 24.0 // k3absorb
 
-    // MARK: - Patient-Specific Scaling Parameters
-    static let a_vb: Double = 1.27, n_vb: Double = 0.373
-    static let CM: Double = 1.05, base_k05: Double = 0.185
-    static let VPref: Double = 2.7749
-    static let BW_M_ref: Double = 67.528, BW_F_ref: Double = 64.145
+    // TSH Delay constant
+    static let k_delay: Double = 15.0 // This is used in a formula where time is in days
 }
 
-
+// CORRECTED PatientParams.swift
 struct ThyroidPatientParams {
-    let height: Double
-    let weight: Double
+    let height: Double // in meters
+    let weight: Double // in kg
     let sex: String
 
+    // Direct translation of the V_p function from the Python notebook
+    private func V_p(sex: String, BW: Double, height_m: Double) -> Double {
+        let idealBW: Double
+        let hematocrit: Double
+
+        if sex.lowercased() == "male" {
+            // Formula from Python: 176.3 - 220.6*h + 93.5*h^2
+            idealBW = 176.3 - (220.6 * height_m) + (93.5 * pow(height_m, 2))
+            hematocrit = 0.45
+        } else { // "female"
+            // Formula from Python: 145.8 - 182.7*h + 79.55*h^2
+            idealBW = 145.8 - (182.7 * height_m) + (79.55 * pow(height_m, 2))
+            hematocrit = 0.4
+        }
+
+        let deviBW = 100.0 * (BW - idealBW) / idealBW
+        // Python: 1.27*BW*(100+deviBW)**(0.373-1). (0.373-1) is -0.627
+        let specificV_blood = 1.27 * BW * pow(100.0 + deviBW, -0.627)
+        let specificV_plasma = specificV_blood * (1.0 - hematocrit)
+
+        return specificV_plasma
+    }
+
+    /// Computes patient-specific parameters based on the Python `newsolver3` function.
     func computeAll() -> (VP_new: Double, VTSH_new: Double, k05_new: Double) {
-        let iBW: Double = sex == "Male"
-            ? 176.3 - 220.6 * height + 93.5 * pow(height, 2)
-            : 145.8 - 182.7 * height + 79.55 * pow(height, 2)
 
-        let delta_iBW = 100 * (weight - iBW) / iBW
-        let VB = ThyrosimConstants.a_vb * pow(100 + delta_iBW, ThyrosimConstants.n_vb - 1.0) * weight
-        let HEM = (sex == "Male") ? 0.45 : 0.4
-        let VP = VB * (1 - HEM)
+        // This calculates the volume for the current patient
+        let patient_vp = V_p(sex: self.sex, BW: self.weight, height_m: self.height)
 
-        let VP_new = 3.2 * VP / ThyrosimConstants.VPref
+        // These are the reference patient values from the Python script
+        let male_ref_vp = V_p(sex: "male", BW: 67.61, height_m: 1.7608)
+        let fem_ref_vp = V_p(sex: "female", BW: 64.06, height_m: 1.669)
+        let avg_ref_vp = (male_ref_vp + fem_ref_vp) / 2.0
+
+        // Normalize the patient's Vp against the reference average
+        let VP_new = 3.2 * patient_vp / avg_ref_vp
+
         let VTSH_new = 5.2 + (VP_new - 3.2)
 
-        let BWref = (sex == "Male") ? 67.528 : 64.145
-        let k05_new = (sex == "Male")
-            ? ThyrosimConstants.CM * ThyrosimConstants.base_k05 * pow(weight / BWref, 0.75)
-            : ThyrosimConstants.base_k05 * pow(weight / BWref, 0.75)
+        let k05_base = 4.43928 / 24.0 // Base k05 per hour
+
+        let k05_new: Double
+        if self.sex.lowercased() == "male" {
+            k05_new = 1.05 * k05_base * pow(self.weight / 67.61, 0.75)
+        } else {
+            k05_new = k05_base * pow(self.weight / 64.06, 0.75)
+        }
 
         return (VP_new, VTSH_new, k05_new)
     }
