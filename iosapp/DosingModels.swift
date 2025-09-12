@@ -67,3 +67,10 @@ enum ActivePopup: Identifiable, Equatable {
     
     var id: Int { hashValue }
 }
+
+enum Run3ActivePopup: Identifiable, Equatable {
+    case Run3T3OralInputs, Run3T3IVInputs, Run3T3InfusionInputs
+    case Run3T4OralInputs, Run3T4IVInputs, Run3T4InfusionInputs
+    
+    var id: Int { hashValue }
+}

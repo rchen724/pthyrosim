@@ -9,16 +9,15 @@ struct ThyroidSimulationResult: Equatable {
     var ft4: [Double] = []
     var ft3: [Double] = []
     var q_final: [Double]? = nil
-
 }
 
-// MARK: - Dose Event Structure (Helper for the new logic)
+// MARK: - Dose Event Structure
 private struct DoseEvent: Comparable {
     let timeHours: Double
     let hormone: HormoneType
     let doseType: DoseType
-    let amountMicrograms: Double // For bolus/oral doses
-    let rateMicrogramsPerHour: Double // For infusions
+    let amountMicrograms: Double
+    let rateMicrogramsPerHour: Double
 
     static func < (lhs: DoseEvent, rhs: DoseEvent) -> Bool {
         return lhs.timeHours < rhs.timeHours
@@ -28,7 +27,7 @@ private struct DoseEvent: Comparable {
     enum DoseType { case oral, iv, infusionStart, infusionEnd }
 }
 
-// MARK: - Thyroid Simulator Class
+// MARK: - Thyroid Simulator Class (Direct Julia Translation)
 class ThyroidSimulator {
 
     // MARK: - Properties
@@ -50,16 +49,21 @@ class ThyroidSimulator {
     private let dt: Double = 0.1 // Time step in hours
     private var q: [Double]
     
+    // Exact initial conditions from Julia code
     private let defaultInitialConditions: [Double] = [
-        0.3221, 0.2012, 0.6389, 0.0066, 0.0112, 0.0652, 1.7882,
-        7.0572, 7.0571, 0, 0, 0, 0, 3.3428, 5.6927, 3.8794,
-        3.9006, 3.7787, 3.5536
+        0.322114215761171, 0.201296960359917, 0.638967411907560, 0.00663104034826483, 0.0112595761822961,
+        0.0652960640300348, 1.78829584764370, 7.05727560072869, 7.05714474742141, 0, 0, 0, 0,
+        3.34289716182018, 3.69277248068433, 3.87942133769244, 3.90061903207543, 3.77875734283571, 3.55364471589659
     ]
 
     private var vp: Double = 3.2
     private var vtsh: Double = 5.2
-    private var k05: Double = 4.43928 / 24.0
+    private var k05: Double = 0.184972339613 / 24.0
     private let epsilon: Double = 1e-9
+    
+    // Infusion rates (in micrograms per hour)
+    private var t4InfusionRate: Double = 0.0
+    private var t3InfusionRate: Double = 0.0
 
     // MARK: - Initialization
     init(
@@ -88,76 +92,72 @@ class ThyroidSimulator {
     }
 
     // MARK: - Main Simulation Runner
-    // In ThyroidSimulator.swift
-
     func runSimulation() -> ThyroidSimulationResult {
         
+        (self.vp, self.vtsh, self.k05) = patientParams.computeAll()
         
-            // --- (MODIFIED) Logic to correctly set the initial state ---
-            if let initialState = self.initialState {
-                self.q = initialState
-            } else {
-                self.q = self.defaultInitialConditions
-            }
-
-            (self.vp, self.vtsh, self.k05) = patientParams.computeAll()
-            
-            // Only find steady state if no initial state was passed in (i.e., for Run 1)
-            if self.initialState == nil && isInitialConditionsOn {
+        // Set initial state
+        if let initialState = self.initialState {
+            // For Run 2: use the provided initial state (from Run 1's final state)
+            self.q = initialState
+        } else {
+            // For Run 1: start with default conditions
+            self.q = self.defaultInitialConditions
+            // Find steady state if requested
+            if isInitialConditionsOn {
                 self.q = findSteadyState()
             }
-        
-        
+        }
+    
         if initialState != nil {
-               print("🚀 SIMULATOR (Run 2) - STARTING...")
-               print("   - Initial 'q' vector: \(self.q)")
-               print("   - Patient Vp: \(self.vp), Vtsh: \(self.vtsh), k05: \(self.k05)")
-           }
-            // --- End of Modifications ---
+            print("🚀 SIMULATOR (Run 2) - STARTING...")
+            print("   - Initial 'q' vector: \(self.q)")
+            print("   - Patient Vp: \(self.vp), Vtsh: \(self.vtsh), k05: \(self.k05)")
+        }
 
-            var results = ThyroidSimulationResult()
-            let totalTimeHours = Double(days) * 24.0
-            let doseEvents = createDoseEventSchedule()
+        var results = ThyroidSimulationResult()
+        let totalTimeHours = Double(days) * 24.0
+        let doseEvents = createDoseEventSchedule()
 
-            var eventIndex = 0
-            var currentTime: Double = 0
-            let logInterval: Double = 2.0
+        var eventIndex = 0
+        var currentTime: Double = 0
+        let logInterval: Double = 2.0
 
-            logResults(time_hours: currentTime, results: &results)
+        logResults(time_hours: currentTime, results: &results)
 
-            while currentTime < totalTimeHours {
-                let nextEventTime = (eventIndex < doseEvents.count) ? doseEvents[eventIndex].timeHours : totalTimeHours
-                let nextLogTime = currentTime + logInterval
-                var stepEndTime = min(nextLogTime, nextEventTime)
-                stepEndTime = min(stepEndTime, totalTimeHours)
+        while currentTime < totalTimeHours {
+            let nextEventTime = (eventIndex < doseEvents.count) ? doseEvents[eventIndex].timeHours : totalTimeHours
+            let nextLogTime = currentTime + logInterval
+            var stepEndTime = min(nextLogTime, nextEventTime)
+            stepEndTime = min(stepEndTime, totalTimeHours)
 
-                let timeStep = stepEndTime - currentTime
-                
-                if timeStep > 1e-5 {
-                    let numSteps = Int((timeStep / dt).rounded(.up))
-                    for _ in 0..<numSteps {
-                        if currentTime >= stepEndTime { break }
-                        rk4Step(t: currentTime, dt: dt)
-                        currentTime += dt
-                    }
-                } else {
-                    currentTime = stepEndTime
+            let timeStep = stepEndTime - currentTime
+            
+            if timeStep > 1e-5 {
+                let numSteps = Int((timeStep / dt).rounded(.up))
+                for _ in 0..<numSteps {
+                    if currentTime >= stepEndTime { break }
+                    rk4Step(t: currentTime, dt: dt)
+                    currentTime += dt
                 }
-                
-                logResults(time_hours: currentTime, results: &results)
-                
-                if eventIndex < doseEvents.count && abs(currentTime - nextEventTime) < dt / 2.0 {
-                    applyImpulseDose(event: doseEvents[eventIndex])
-                    eventIndex += 1
-                }
+            } else {
+                currentTime = stepEndTime
             }
             
-            // --- (ADDED) Store the final state of the simulation ---
-            results.q_final = self.q
-
-            //printResults(results)
-            return results
+            logResults(time_hours: currentTime, results: &results)
+            
+            if eventIndex < doseEvents.count && abs(currentTime - nextEventTime) < dt / 2.0 {
+                applyImpulseDose(event: doseEvents[eventIndex])
+                eventIndex += 1
+            }
         }
+        
+        // Store the final state of the simulation
+        results.q_final = self.q
+
+        return results
+    }
+    
     // MARK: - Dosing Logic
     private func createDoseEventSchedule() -> [DoseEvent] {
         var events: [DoseEvent] = []
@@ -263,28 +263,36 @@ class ThyroidSimulator {
                 q[3] += event.amountMicrograms / MW_T3
             }
         case .infusionStart:
-            // This is handled by a separate infusion rate variable, no impulse needed
-            break
+            // Start infusion by setting the infusion rate
+            if event.hormone == .t4 {
+                t4InfusionRate = event.rateMicrogramsPerHour
+            } else {
+                t3InfusionRate = event.rateMicrogramsPerHour
+            }
         case .infusionEnd:
-            // This is handled by a separate infusion rate variable, no impulse needed
-            break
+            // Stop infusion by setting the infusion rate to zero
+            if event.hormone == .t4 {
+                t4InfusionRate = 0.0
+            } else {
+                t3InfusionRate = 0.0
+            }
         }
     }
     
     // MARK: - Steady-State Solver
     private func findSteadyState() -> [Double] {
-            let steadyStateSimulator = ThyroidSimulator(
-                t4Secretion: self.t4Secretion, t3Secretion: self.t3Secretion,
-                t4Absorption: self.t4Absorption, t3Absorption: self.t3Absorption,
-                gender: self.patientParams.sex, height: self.patientParams.height, weight: self.patientParams.weight,
-                days: 200, // Run for a long time to ensure steady state
-                t3OralDoses: [], t4OralDoses: [], t3IVDoses: [], t4IVDoses: [], t3InfusionDoses: [], t4InfusionDoses: [],
-                isInitialConditionsOn: false // Prevent infinite recursion
-            )
-            
-            let result = steadyStateSimulator.runSimulation()
-            return result.q_final ?? self.defaultInitialConditions
-        }
+        let steadyStateSimulator = ThyroidSimulator(
+            t4Secretion: self.t4Secretion, t3Secretion: self.t3Secretion,
+            t4Absorption: self.t4Absorption, t3Absorption: self.t3Absorption,
+            gender: self.patientParams.sex, height: self.patientParams.height, weight: self.patientParams.weight,
+            days: 200, // Run for a long time to ensure steady state
+            t3OralDoses: [], t4OralDoses: [], t3IVDoses: [], t4IVDoses: [], t3InfusionDoses: [], t4InfusionDoses: [],
+            isInitialConditionsOn: false // Prevent infinite recursion
+        )
+        
+        let result = steadyStateSimulator.runSimulation()
+        return result.q_final ?? self.defaultInitialConditions
+    }
 
     // MARK: - Numerical Solver
     private func rk4Step(t: Double, dt: Double) {
@@ -297,72 +305,68 @@ class ThyroidSimulator {
         q = q.map { max(0, $0) }
     }
 
-    // MARK: - ODE System
+    // MARK: - ODE System (Exact Julia Translation with Proper Oscillations)
     private func calculateDerivatives(q_in: [Double], t: Double, dosing: Bool = true) -> [Double] {
         var dqdt = [Double](repeating: 0.0, count: 19)
-        let C = ThyrosimConstants.self
-        let t_days = t / 24.0
         
-        let (q0_T4p, q1_T4fast, q2_T4slow, q3_T3p, q4_T3fast, q5_T3slow, q6_TSHp, q7_T3B, q8_T3B_lag, q9, q10, q11, q12, q13, q14, q15, q16, q17, q18) =
-            (q_in[0], q_in[1], q_in[2], q_in[3], q_in[4], q_in[5], q_in[6], q_in[7], q_in[8],
-             q_in[9], q_in[10], q_in[11], q_in[12],
-             q_in[13], q_in[14], q_in[15], q_in[16], q_in[17], q_in[18])
-
-        let t4AbsorptionRate = C.k_absorb_T4 * (self.t4Absorption / 88.0)
-        let t3AbsorptionRate = C.k_absorb_T3 * (self.t3Absorption / 88.0)
-
-        let pv_ratio = 1.0, slow_scale = 1.0, fast_scale = 1.0
-        let q1_temp = q0_T4p / pv_ratio, q2_temp = q1_T4fast / fast_scale, q3_temp = q2_T4slow / slow_scale
-        let q4_temp = q3_T3p / pv_ratio, q5_temp = q4_T3fast / fast_scale, q6_temp = q5_T3slow / slow_scale
-        let q7_temp = q6_TSHp / pv_ratio
-        let q4F = (C.ft3_a + C.ft3_b * q1_temp + C.ft3_c * pow(q1_temp, 2) + C.ft3_d * pow(q1_temp, 3)) * q4_temp
-        let q1F = (C.ft4_A + C.ft4_B * q1_temp + C.ft4_C * pow(q1_temp, 2) + C.ft4_D * pow(q1_temp, 3)) * q1_temp
-
-        let SR4 = C.S4 * q18 * (self.t4Secretion / 100.0)
-        let SR3 = C.S3 * q18 * (self.t3Secretion / 100.0)
-
-        let f_CIRC = pow(q8_T3B_lag, C.nHill_CIRC) / (pow(q8_T3B_lag, C.nHill_CIRC) + pow(C.KCIRC, C.nHill_CIRC) + epsilon)
-        let SR_TSH_Inhib = pow(C.Km_SR_TSH, C.m_SR_TSH) / (pow(C.Km_SR_TSH, C.m_SR_TSH) + pow(q8_T3B_lag, C.m_SR_TSH) + epsilon)
-        let SR_TSH_rate = (C.B0 + C.A0 * f_CIRC * sin(2.0 * Double.pi * t_days - C.phi)) * SR_TSH_Inhib
-        let fdegTSH = C.kDegTSH + C.VmaxTSH / (C.K50TSH + q7_temp + epsilon)
-        let f_LAG = C.f_LAG_base + 2.0 * pow(q7_T3B, 11) / (pow(C.KLAG, 11) + pow(q7_T3B, 11) + epsilon)
-        let f4_term = pow(q7_T3B, C.l_hillf3)
-        let f4 = C.k7 * (1.0 + (5.0 * pow(C.Kf4_brain, C.l_hillf3)) / (pow(C.Kf4_brain, C.l_hillf3) + f4_term + epsilon))
-        let NL = C.Vmax_D1_fast / (C.Km_D1_fast + q2_temp + epsilon)
+        // Exact Julia parameters
+        let kdelay = 5.0 / 8.0
         
-        dqdt[0] = (SR4 + C.k12*q2_temp + C.k13*q3_temp - (C.k31free + C.k21free)*q1F) * pv_ratio + t4AbsorptionRate*q10
-        dqdt[1] = (C.k21free*q1F - (C.k12 + C.kDegT4 + NL)*q2_temp) * fast_scale
-        let t4_conversion_slow = (C.Vmax_D1_slow / (C.Km_D1_slow + q3_temp + epsilon)) + (C.Vmax_D2_slow / (C.Km_D2_slow + q3_temp + epsilon))
-        dqdt[2] = (C.k31free * q1F - (C.k13 + t4_conversion_slow) * q3_temp) * slow_scale
-        dqdt[3] = (SR3 + C.k45*q5_temp + C.k46*q6_temp - (C.k64free + C.k54free)*q4F) * pv_ratio + t3AbsorptionRate*q12
-        dqdt[4] = (C.k54free * q4F + NL * q2_temp - (C.k45 + self.k05) * q5_temp) * fast_scale
-        let t3_production_slow = t4_conversion_slow * q3_temp
-        dqdt[5] = (C.k64free * q4F + t3_production_slow - C.k46 * q6_temp) * slow_scale
-        dqdt[6] = (SR_TSH_rate - fdegTSH*q7_temp) * pv_ratio
-        dqdt[7] = (f4 / C.T4P_eu) * q1_temp + (C.k7 / C.T3P_eu) * q4_temp - C.k_deg_T3B * q7_T3B
-        dqdt[8] = f_LAG * (q7_T3B - q8_T3B_lag)
+        // Volume scaling ratios (from Julia p[69]^p[71], p[74]^p[71], p[75]^p[71])
+        let plasma_volume_ratio = 1.0  // p[69]^p[71] = 1.0^1.0 = 1.0
+        let slow_volume_ratio = 1.0    // p[74]^p[71] = 1.0^1.0 = 1.0
+        let fast_volume_ratio = 1.0    // p[75]^p[71] = 1.0^1.0 = 1.0
+        
+        // Scale compartment sizes (exact from Julia)
+        let q1 = q_in[0] * 1.0 / 1.0  // q[1] * 1 / p[69]
+        let q2 = q_in[1] * 1.0 / 1.0  // q[2] * 1 / p[75]
+        let q3 = q_in[2] * 1.0 / 1.0  // q[3] * 1 / p[74]
+        let q4 = q_in[3] * 1.0 / 1.0  // q[4] * 1 / p[69]
+        let q5 = q_in[4] * 1.0 / 1.0  // q[5] * 1 / p[75]
+        let q6 = q_in[5] * 1.0 / 1.0  // q[6] * 1 / p[74]
+        let q7 = q_in[6] * 1.0 / 1.0  // q[7] * 1 / p[69]
 
-        dqdt[9] = -C.k_pill_T4 * q9
-        dqdt[10] = C.k_pill_T4*q9 - (C.k_excrete_T4 + t4AbsorptionRate)*q10
-        dqdt[11] = -C.k_pill_T3 * q11
-        dqdt[12] = C.k_pill_T3*q11 - (C.k_excrete_T3 + t3AbsorptionRate)*q12
+        // Auxiliary equations (exact from Julia)
+        let q4F = (0.00395 + 0.00185 * q1 + 0.00061 * pow(q1, 2) + (-0.000505) * pow(q1, 3)) * q4  // FT3p
+        let q1F = (0.000289 + 0.000214 * q1 + 0.000128 * pow(q1, 2) + (-8.83e-6) * pow(q1, 3)) * q1  // FT4p
+        let SR3 = (0.00033572 * (self.t3Secretion / 100.0) * q_in[18])  // Brain delay (dial 3) - CORRECTED INDEX
+        let SR4 = (0.0027785399344 * (self.t4Secretion / 100.0) * q_in[18])  // Brain delay (dial 1) - CORRECTED INDEX
+        let fCIRC = pow(q_in[8], 5.674773816316) / (pow(q_in[8], 5.674773816316) + pow(3.001011022378, 5.674773816316))
+        let SRTSH = (450.0 + 219.7085301388 * fCIRC * sin(Double.pi / 12.0 * t - (-3.71))) * (pow(3.094711690204, 6.290803221796) / (pow(3.094711690204, 6.290803221796) + pow(q_in[8], 6.290803221796)))
+        let fdegTSH = 0.53 + 0.226 / (23.0 + q7)
+        let fLAG = 0.0034 + 2.0 * pow(q_in[7], 11) / (pow(5.0, 11) + pow(q_in[7], 11))
+        let f4 = 0.058786935033 * (1.0 + 5.0 * pow(8.498343729591, 14.36664496926) / (pow(8.498343729591, 14.36664496926) + pow(q_in[7], 14.36664496926)))
+        let NL = 0.012101809339 / (2.85 + q2)
+
+        // ODEs (exact from Julia with infusion support)
+        dqdt[0] = (SR4 + 0.868 * q2 + 0.108 * q3 - (584.0 + 1503.0) * q1F) * plasma_volume_ratio + 0.88 * (self.t4Absorption / 88.0) * q_in[10] + t4InfusionRate / 777.0
+        dqdt[1] = (1503.0 * q1F - (0.868 + 0.0189 + NL) * q2) * fast_volume_ratio
+        dqdt[2] = (584.0 * q1F - (0.108 + 0.000663 / (95.0 + q3) + 0.00074619 / (0.075 + q3)) * q3) * slow_volume_ratio
+        dqdt[3] = (SR3 + 5.37 * q5 + 0.0689 * q6 - (127.0 + 2043.0) * q4F) * plasma_volume_ratio + 0.88 * (self.t3Absorption / 88.0) * q_in[12] + t3InfusionRate / 651.0
+        dqdt[4] = (2043.0 * q4F + NL * q2 - (5.37 + self.k05 * 24.0) * q5) * fast_volume_ratio
+        dqdt[5] = (127.0 * q4F + (0.000663 / (95.0 + q3) + 0.00074619 / (0.075 + q3)) * q3 - 0.0689 * q6) * slow_volume_ratio
+        dqdt[6] = (SRTSH - fdegTSH * q7) * plasma_volume_ratio
+        dqdt[7] = f4 / 0.29 * q1 + 0.058786935033 / 0.006 * q4 - 0.037 * q_in[7]
+        dqdt[8] = fLAG * (q_in[7] - q_in[8])
+
+        dqdt[9] = -1.3 * q_in[9]
+        dqdt[10] = 1.3 * q_in[9] - (0.12 * (self.t4Absorption / 88.0) + 0.88 * (self.t4Absorption / 88.0)) * q_in[10]
+        dqdt[11] = -1.78 * q_in[11]
+        dqdt[12] = 1.78 * q_in[11] - (0.12 * (self.t3Absorption / 88.0) + 0.88 * (self.t3Absorption / 88.0)) * q_in[12]
         
-        dqdt[13] = (q7_temp - C.k_delay * q13)
-        
-        dqdt[14] = C.k_delay * (q13 - q14)
-        dqdt[15] = C.k_delay * (q14 - q15)
-        dqdt[16] = C.k_delay * (q15 - q16)
-        dqdt[17] = C.k_delay * (q16 - q17)
-        dqdt[18] = C.k_delay * (q17 - q18)
-        
-    
+        // Delay ODEs (exact from Julia)
+        dqdt[13] = kdelay * (q7 - q_in[13])  // delay1
+        dqdt[14] = kdelay * (q_in[13] - q_in[14])  // delay2
+        dqdt[15] = kdelay * (q_in[14] - q_in[15])  // delay3
+        dqdt[16] = kdelay * (q_in[15] - q_in[16])  // delay4
+        dqdt[17] = kdelay * (q_in[16] - q_in[17])  // delay5
+        dqdt[18] = kdelay * (q_in[17] - q_in[18])  // delay6
         
         return dqdt
     }
 
-    // MARK: - Result Logging and Unit Conversion
+    // MARK: - Result Logging and Unit Conversion (Exact Julia Translation)
     private func logResults(time_hours: Double, results: inout ThyroidSimulationResult) {
-        let C = ThyrosimConstants.self
         guard vp > 0, vtsh > 0 else { return }
         
         let MW_T4 = 777.0
@@ -374,10 +378,11 @@ class ThyroidSimulator {
         let T4_total_umol_L = T4_total_umol / vp
         let T3_total_umol_L = T3_total_umol / vp
 
-        let free_T4_amount_umol = 0.45 * (C.ft4_A + C.ft4_B * T4_total_umol + C.ft4_C * pow(T4_total_umol, 2) + C.ft4_D * pow(T4_total_umol, 3)) * T4_total_umol
+        // Exact free hormone calculations from Julia
+        let free_T4_amount_umol = 1.1 * 0.45 * (0.000289 + 0.000214 * T4_total_umol + 0.000128 * pow(T4_total_umol, 2) + (-8.83e-6) * pow(T4_total_umol, 3)) * T4_total_umol
         let free_T4_umol_L = free_T4_amount_umol / vp
 
-        let free_T3_amount_umol = 0.5 * (C.ft3_a + C.ft3_b * T4_total_umol + C.ft3_c * pow(T4_total_umol, 2) + C.ft3_d * pow(T4_total_umol, 3)) * T3_total_umol
+        let free_T3_amount_umol = 1.05 * 0.5 * (0.00395 + 0.00185 * T4_total_umol + 0.00061 * pow(T4_total_umol, 2) + (-0.000505) * pow(T4_total_umol, 3)) * T3_total_umol
         let free_T3_umol_L = free_T3_amount_umol / vp
         
         let yT4_total_ug_L = T4_total_umol_L * MW_T4
@@ -395,39 +400,6 @@ class ThyroidSimulator {
         results.ft4.append(yFT4_ng_L)
         results.ft3.append(yFT3_pg_mL)
     }
-    
-    private func printResults(_ results: ThyroidSimulationResult) {
-            print("--- Thyroid Simulation Results (Run 2) ---")
-            
-            print("\n--- T4 Data (Time, Value) ---")
-            for i in 0..<results.time.count {
-                print(String(format: "(%.2f, %.4f)", results.time[i], results.t4[i]))
-            }
-            
-            print("\n--- Free T4 Data (Time, Value) ---")
-            for i in 0..<results.time.count {
-                print(String(format: "(%.2f, %.4f)", results.time[i], results.ft4[i]))
-            }
-            
-            print("\n--- T3 Data (Time, Value) ---")
-            for i in 0..<results.time.count {
-                print(String(format: "(%.2f, %.4f)", results.time[i], results.t3[i]))
-            }
-            
-            print("\n--- Free T3 Data (Time, Value) ---")
-            for i in 0..<results.time.count {
-                print(String(format: "(%.2f, %.4f)", results.time[i], results.ft3[i]))
-            }
-            
-            print("\n--- TSH Data (Time, Value) ---")
-            for i in 0..<results.time.count {
-                print(String(format: "(%.2f, %.4f)", results.time[i], results.tsh[i]))
-            }
-            
-            print("\n--- End of Simulation Data ---")
-        }
-    
-    
 }
 
 // MARK: - Array Helper Extensions

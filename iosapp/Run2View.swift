@@ -147,6 +147,9 @@ struct Run2View: View {
             let result = simulator.runSimulation()
             await MainActor.run {
                 self.run2Result = result
+                // Store this result for future superimposition and for Run3
+                self.simulationData.previousRun2Results.append(result)
+                self.simulationData.run2Result = result
                 self.isSimulating = false
                 self.navigateToGraph = true
             }

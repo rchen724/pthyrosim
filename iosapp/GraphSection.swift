@@ -1,6 +1,13 @@
 import SwiftUI
 import Charts
 
+struct ChartDataPoint: Identifiable {
+    let id = UUID()
+    let x: Double
+    let y: Double
+    let series: String
+}
+
 struct GraphSection: View {
     let title: String
     let yLabel: String
@@ -9,6 +16,8 @@ struct GraphSection: View {
     let color: Color
     let secondaryValues: [(Double, Double)]?
     let secondaryColor: Color?
+    let tertiaryValues: [(Double, Double)]?
+    let tertiaryColor: Color?
     let yAxisRange: ClosedRange<Double>
     let xAxisRange: ClosedRange<Double>
     @Binding var showNormalRange: Bool
@@ -19,7 +28,7 @@ struct GraphSection: View {
     @State private var currentMagnification: CGFloat = 1.0
     @State private var selectedDataPoint: (time: Double, value: Double)? = nil
     
-    init(title: String, yLabel: String, xLabel: String, values: [(Double, Double)], color: Color, secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil, yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>, showNormalRange: Binding<Bool>) {
+    init(title: String, yLabel: String, xLabel: String, values: [(Double, Double)], color: Color, secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil, tertiaryValues: [(Double, Double)]? = nil, tertiaryColor: Color? = nil, yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>, showNormalRange: Binding<Bool>) {
         self.title = title
         self.yLabel = yLabel
         self.xLabel = xLabel
@@ -27,11 +36,39 @@ struct GraphSection: View {
         self.color = color
         self.secondaryValues = secondaryValues
         self.secondaryColor = secondaryColor
+        self.tertiaryValues = tertiaryValues
+        self.tertiaryColor = tertiaryColor
         self._showNormalRange = showNormalRange
         self.yAxisRange = yAxisRange
         self.xAxisRange = xAxisRange
         _currentYDomain = State(initialValue: yAxisRange)
         _currentXDomain = State(initialValue: 0...max(5, xAxisRange.upperBound))
+    }
+    
+    // Combined data for Chart
+    private var chartData: [ChartDataPoint] {
+        var data: [ChartDataPoint] = []
+        
+        // Add primary data
+        for (x, y) in values {
+            data.append(ChartDataPoint(x: x, y: y, series: "Current"))
+        }
+        
+        // Add secondary data if available
+        if let secondaryValues = secondaryValues {
+            for (x, y) in secondaryValues {
+                data.append(ChartDataPoint(x: x, y: y, series: "Secondary"))
+            }
+        }
+        
+        // Add tertiary data if available
+        if let tertiaryValues = tertiaryValues {
+            for (x, y) in tertiaryValues {
+                data.append(ChartDataPoint(x: x, y: y, series: "Tertiary"))
+            }
+        }
+        
+        return data
     }
     
     var body: some View {
@@ -56,12 +93,16 @@ struct GraphSection: View {
                                yEnd: .value("Normal Max", range.upperBound)
                             ).foregroundStyle(Color.yellow.opacity(0.2))
                         }
-                        ForEach(values.indices, id: \.self) { index in
+                        
+                        ForEach(chartData) { dataPoint in
                             LineMark(
-                                x: .value(xLabel, values[index].0),
-                                y: .value(yLabel, values[index].1)
-                            ).foregroundStyle(color)
+                                x: .value(xLabel, dataPoint.x),
+                                y: .value(yLabel, dataPoint.y)
+                            )
+                            .foregroundStyle(by: .value("Series", dataPoint.series))
+                            .lineStyle(by: .value("Series", dataPoint.series))
                         }
+                        
                         if let selectedDataPoint {
                             RuleMark(x: .value("Selected Time", selectedDataPoint.time))
                                 .foregroundStyle(Color.gray.opacity(0.6))
@@ -79,6 +120,16 @@ struct GraphSection: View {
                             }
                         }
                     }
+                    .chartForegroundStyleScale([
+                        "Current": color,
+                        "Secondary": secondaryColor ?? .orange,
+                        "Tertiary": tertiaryColor ?? .green
+                    ])
+                    .chartLineStyleScale([
+                        "Current": StrokeStyle(lineWidth: 2.5),
+                        "Secondary": StrokeStyle(lineWidth: 2.5, dash: [5, 5]),
+                        "Tertiary": StrokeStyle(lineWidth: 2.5, dash: [10, 5])
+                    ])
                     // --- AXIS FIXES ARE HERE ---
                     .chartYAxis {
                         // Use the new helper function to generate detailed grid lines
