@@ -43,14 +43,21 @@ struct ThyroidPatientParams {
 
         // Calculate the volume for the current patient
         let patient_vp = V_p(sex: self.sex, BW: self.weight, height_m: self.height)
-
-        // Reference patient values from Julia implementation
-        let male_ref_vp = V_p(sex: "male", BW: 67.61, height_m: 1.7608)
-        let fem_ref_vp = V_p(sex: "female", BW: 64.06, height_m: 1.669)
+        
+        // Reference patient values from Julia implementation (exact match)
+        // Julia uses: male_ref_height = 1.7, female_ref_height = 1.63, ref_bmi = 22.5
+        let male_ref_weight = 22.5 * pow(1.7, 2)  // BMI * height^2
+        let female_ref_weight = 22.5 * pow(1.63, 2)  // BMI * height^2
+        
+        let male_ref_vp = V_p(sex: "male", BW: male_ref_weight, height_m: 1.7)
+        let fem_ref_vp = V_p(sex: "female", BW: female_ref_weight, height_m: 1.63)
         let avg_ref_vp = (male_ref_vp + fem_ref_vp) / 2.0
 
         // Normalize the patient's Vp against the reference average
         let VP_new = 3.2 * patient_vp / avg_ref_vp
+        
+        // Debug: Concise plasma volume info
+        print("🔍 Vp: \(self.sex) \(self.height)m \(self.weight)kg → patient=\(String(format: "%.3f", patient_vp)), ref=\(String(format: "%.3f", avg_ref_vp)), final=\(String(format: "%.3f", VP_new))")
 
         let VTSH_new = 5.2 + (VP_new - 3.2)
 

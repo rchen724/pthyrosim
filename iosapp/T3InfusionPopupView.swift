@@ -105,9 +105,9 @@ struct T3InfusionPopupView: View {
                         .ignoresSafeArea()
                     
                     // Popup itself
-                    ErrorPopup(message: errorMessage) {
+                    ErrorPopup(message: errorMessage, onDismiss: {
                         showErrorPopup = false
-                    }
+                    })
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.clear) // Ensure it takes full space
@@ -155,10 +155,11 @@ struct T3InfusionPopupView: View {
         // validated
         onSave(newT3InfusionInput)
         dismiss()
-        func showError(_ message: String) {
-            errorMessage = message
-            showErrorPopup = true
-        }
+    }
+    
+    func showError(_ message: String) {
+        errorMessage = message
+        showErrorPopup = true
     }
 }
 

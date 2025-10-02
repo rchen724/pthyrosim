@@ -41,7 +41,7 @@ struct SimulationGraphView: View {
                 yLabel: selectedHormoneType == .free ? "FT3 (pg/mL)" : "T3 (ng/dL)",
                 xLabel: "Days",
                 values: t3GraphData,
-                color: .green,
+                color: .blue,
                 yAxisRange: calculateYAxisDomain(for: t3GraphData.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
@@ -52,7 +52,7 @@ struct SimulationGraphView: View {
                 yLabel: "TSH (mU/L)",
                 xLabel: "Days",
                 values: tshGraphData,
-                color: .red,
+                color: .blue,
                 yAxisRange: calculateYAxisDomain(for: tshGraphData.map { $0.1 }, title: "TSH"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
@@ -109,7 +109,7 @@ struct SimulationGraphView: View {
                         yLabel: selectedHormoneType == .free ? "FT3 (pg/mL)" : "T3 (ng/dL)",
                         xLabel: "Days",
                         values: t3GraphData,
-                        color: .green,
+                        color: .blue,
                         yAxisRange: calculateYAxisDomain(for: t3GraphData.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                         xAxisRange: effectiveXAxisRange,
                         showNormalRange: $showNormalRange
@@ -120,7 +120,7 @@ struct SimulationGraphView: View {
                         yLabel: "TSH (mU/L)",
                         xLabel: "Days",
                         values: tshGraphData,
-                        color: .red,
+                        color: .blue,
                         yAxisRange: calculateYAxisDomain(for: tshGraphData.map { $0.1 }, title: "TSH"),
                         xAxisRange: effectiveXAxisRange,
                         showNormalRange: $showNormalRange
@@ -186,6 +186,7 @@ struct SimulationGraphView: View {
         let buffer = (maxVal - minVal) * 0.1
         return (minVal - buffer)...(maxVal + buffer)
     }
+    
     private func calculateYAxisDomain(for values: [Double], title: String) -> ClosedRange<Double> {
         let dataRange = dynamicRange(for: values)
         var upperBound: Double

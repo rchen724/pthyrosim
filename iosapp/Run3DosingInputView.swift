@@ -78,18 +78,6 @@ struct Run3DosingInputView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.white)
                             }
-                            HStack(alignment: .firstTextBaseline) {
-                                Text("• ")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                VStack(alignment: .center) {
-                                    Text("Run 3 starts from Run 2's final state")
-                                    Text("and allows additional dosing experiments")
-                                    
-                                }
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                            }
                         }
                         .font(.footnote)
                     }

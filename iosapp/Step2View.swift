@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct Step2View: View {
     @EnvironmentObject var simulationData: SimulationData

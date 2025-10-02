@@ -142,7 +142,8 @@ struct Run3View: View {
                 t4InfusionDoses: simulationData.run3T4infusioninputs,
                 isInitialConditionsOn: isInitialConditionsOn
             )
-            simulator.initialState = simulationData.run2Result?.q_final
+            // Run 3 should be independent - start with fresh initial conditions
+            // simulator.initialState = simulationData.run2Result?.q_final  // REMOVED: Run 3 should be independent
             let result = simulator.runSimulation()
             
             await MainActor.run {

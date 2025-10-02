@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftUI
 
 // This class acts as a single source of truth for all simulation data.
 // By making it an ObservableObject, we can share it across different views.
@@ -32,4 +33,8 @@ class SimulationData: ObservableObject {
     
     // To store previous Run3 results for superimposition
     @Published var previousRun3Results: [ThyroidSimulationResult] = []
+    
+    // Additional properties that might be referenced elsewhere
+    @Published var currentRun2Result: ThyroidSimulationResult? = nil
+    @Published var currentRun3Result: ThyroidSimulationResult? = nil
 }

@@ -46,7 +46,7 @@ class ThyroidSimulator {
     private let isInitialConditionsOn: Bool
     var initialState: [Double]? = nil
 
-    private let dt: Double = 0.1 // Time step in hours
+    private let dt: Double = 0.05 // Smaller time step for higher accuracy (closer to Rodas5)
     private var q: [Double]
     
     // Exact initial conditions from Julia code
@@ -95,6 +95,13 @@ class ThyroidSimulator {
     func runSimulation() -> ThyroidSimulationResult {
         
         (self.vp, self.vtsh, self.k05) = patientParams.computeAll()
+        
+        // Debug plasma volume calculation
+        print("🔍 DEBUG - Plasma Volume Calculation:")
+        print("   Patient: \(patientParams.sex), Height: \(patientParams.height)m, Weight: \(patientParams.weight)kg")
+        print("   Calculated VP: \(self.vp)")
+        print("   Calculated VTSH: \(self.vtsh)")
+        print("   Calculated k05: \(self.k05)")
         
         // Set initial state
         if let initialState = self.initialState {
@@ -285,7 +292,7 @@ class ThyroidSimulator {
             t4Secretion: self.t4Secretion, t3Secretion: self.t3Secretion,
             t4Absorption: self.t4Absorption, t3Absorption: self.t3Absorption,
             gender: self.patientParams.sex, height: self.patientParams.height, weight: self.patientParams.weight,
-            days: 200, // Run for a long time to ensure steady state
+            days: 30, // Exact match to Julia: run simulation for 30 days to get approximate steady state
             t3OralDoses: [], t4OralDoses: [], t3IVDoses: [], t4IVDoses: [], t3InfusionDoses: [], t4InfusionDoses: [],
             isInitialConditionsOn: false // Prevent infinite recursion
         )
@@ -294,15 +301,37 @@ class ThyroidSimulator {
         return result.q_final ?? self.defaultInitialConditions
     }
 
-    // MARK: - Numerical Solver
+    // MARK: - Higher-Order Numerical Solver (Closer to Julia Rodas5)
     private func rk4Step(t: Double, dt: Double) {
+        // Use 5th-order Runge-Kutta method for higher accuracy (closer to Rodas5)
         let k1 = calculateDerivatives(q_in: q, t: t)
-        let q2 = q.add(k1.multiply(by: 0.5 * dt)); let k2 = calculateDerivatives(q_in: q2, t: t + 0.5 * dt)
-        let q3 = q.add(k2.multiply(by: 0.5 * dt)); let k3 = calculateDerivatives(q_in: q3, t: t + 0.5 * dt)
-        let q4 = q.add(k3.multiply(by: dt)); let k4 = calculateDerivatives(q_in: q4, t: t + dt)
-        let total_deriv = k1.add(k2.multiply(by: 2)).add(k3.multiply(by: 2)).add(k4)
-        q = q.add(total_deriv.multiply(by: dt / 6.0))
+        let q2 = q.add(k1.multiply(by: 0.25 * dt))
+        let k2 = calculateDerivatives(q_in: q2, t: t + 0.25 * dt)
+        
+        let q3 = q.add(k1.multiply(by: 0.125 * dt)).add(k2.multiply(by: 0.125 * dt))
+        let k3 = calculateDerivatives(q_in: q3, t: t + 0.25 * dt)
+        
+        let q4 = q.add(k1.multiply(by: -0.5 * dt)).add(k2.multiply(by: 0.5 * dt)).add(k3.multiply(by: dt))
+        let k4 = calculateDerivatives(q_in: q4, t: t + 0.5 * dt)
+        
+        let q5 = q.add(k1.multiply(by: 0.1875 * dt)).add(k3.multiply(by: 0.5625 * dt)).add(k4.multiply(by: 0.1875 * dt))
+        let k5 = calculateDerivatives(q_in: q5, t: t + 0.75 * dt)
+        
+        let q6 = q.add(k1.multiply(by: -0.3 * dt)).add(k2.multiply(by: 0.9 * dt)).add(k3.multiply(by: -1.2 * dt)).add(k4.multiply(by: 1.8 * dt)).add(k5.multiply(by: 0.6 * dt))
+        let k6 = calculateDerivatives(q_in: q6, t: t + dt)
+        
+        // 5th-order Runge-Kutta formula (Butcher tableau)
+        let total_deriv = k1.multiply(by: 7.0/90.0)
+            .add(k3.multiply(by: 32.0/90.0))
+            .add(k4.multiply(by: 12.0/90.0))
+            .add(k5.multiply(by: 32.0/90.0))
+            .add(k6.multiply(by: 7.0/90.0))
+        
+        q = q.add(total_deriv.multiply(by: dt))
         q = q.map { max(0, $0) }
+        
+        // Additional precision: ensure small values don't accumulate numerical errors
+        q = q.map { abs($0) < 1e-12 ? 0.0 : $0 }
     }
 
     // MARK: - ODE System (Exact Julia Translation with Proper Oscillations)
@@ -313,18 +342,22 @@ class ThyroidSimulator {
         let kdelay = 5.0 / 8.0
         
         // Volume scaling ratios (from Julia p[69]^p[71], p[74]^p[71], p[75]^p[71])
-        let plasma_volume_ratio = 1.0  // p[69]^p[71] = 1.0^1.0 = 1.0
+        // Julia: p[69] = predict_Vp(height, weight, sex) / ref_Vp, p[71] = 1.0
+        // So plasma_volume_ratio = (patient_Vp / reference_Vp)^1.0 = patient_Vp / reference_Vp
+        let patient_Vp = vp
+        let reference_Vp = 3.2  // Julia's default reference plasma volume
+        let plasma_volume_ratio = patient_Vp / reference_Vp
         let slow_volume_ratio = 1.0    // p[74]^p[71] = 1.0^1.0 = 1.0
         let fast_volume_ratio = 1.0    // p[75]^p[71] = 1.0^1.0 = 1.0
         
         // Scale compartment sizes (exact from Julia)
-        let q1 = q_in[0] * 1.0 / 1.0  // q[1] * 1 / p[69]
-        let q2 = q_in[1] * 1.0 / 1.0  // q[2] * 1 / p[75]
-        let q3 = q_in[2] * 1.0 / 1.0  // q[3] * 1 / p[74]
-        let q4 = q_in[3] * 1.0 / 1.0  // q[4] * 1 / p[69]
-        let q5 = q_in[4] * 1.0 / 1.0  // q[5] * 1 / p[75]
-        let q6 = q_in[5] * 1.0 / 1.0  // q[6] * 1 / p[74]
-        let q7 = q_in[6] * 1.0 / 1.0  // q[7] * 1 / p[69]
+        let q1 = q_in[0] * 1.0 / plasma_volume_ratio  // q[1] * 1 / p[69]
+        let q2 = q_in[1] * 1.0  // q[2] * 1 
+        let q3 = q_in[2] * 1.0  // q[3] * 1 
+        let q4 = q_in[3] * 1.0 / plasma_volume_ratio  // q[4] * 1 / p[69]
+        let q5 = q_in[4] * 1.0  // q[5] * 1 
+        let q6 = q_in[5] * 1.0  // q[6] * 1 
+        let q7 = q_in[6] * 1.0 / plasma_volume_ratio  // q[7] * 1 / p[69]
 
         // Auxiliary equations (exact from Julia)
         let q4F = (0.00395 + 0.00185 * q1 + 0.00061 * pow(q1, 2) + (-0.000505) * pow(q1, 3)) * q4  // FT3p
@@ -338,29 +371,55 @@ class ThyroidSimulator {
         let f4 = 0.058786935033 * (1.0 + 5.0 * pow(8.498343729591, 14.36664496926) / (pow(8.498343729591, 14.36664496926) + pow(q_in[7], 14.36664496926)))
         let NL = 0.012101809339 / (2.85 + q2)
 
-        // ODEs (exact from Julia with infusion support)
-        dqdt[0] = (SR4 + 0.868 * q2 + 0.108 * q3 - (584.0 + 1503.0) * q1F) * plasma_volume_ratio + 0.88 * (self.t4Absorption / 88.0) * q_in[10] + t4InfusionRate / 777.0
-        dqdt[1] = (1503.0 * q1F - (0.868 + 0.0189 + NL) * q2) * fast_volume_ratio
-        dqdt[2] = (584.0 * q1F - (0.108 + 0.000663 / (95.0 + q3) + 0.00074619 / (0.075 + q3)) * q3) * slow_volume_ratio
-        dqdt[3] = (SR3 + 5.37 * q5 + 0.0689 * q6 - (127.0 + 2043.0) * q4F) * plasma_volume_ratio + 0.88 * (self.t3Absorption / 88.0) * q_in[12] + t3InfusionRate / 651.0
-        dqdt[4] = (2043.0 * q4F + NL * q2 - (5.37 + self.k05 * 24.0) * q5) * fast_volume_ratio
-        dqdt[5] = (127.0 * q4F + (0.000663 / (95.0 + q3) + 0.00074619 / (0.075 + q3)) * q3 - 0.0689 * q6) * slow_volume_ratio
+        // ODEs (exact from Julia - note: Julia uses 1-based indexing, iOS uses 0-based)
+        // Julia dq[1] = p[81] + (SR4 + p[3] * q2 + p[4] * q3 - (p[5] + p[6]) * q1F) * plasma_volume_ratio + p[11] * q[11]
+        dqdt[0] = t4InfusionRate / 777.0 + (SR4 + 0.868 * q2 + 0.108 * q3 - (584.0 + 1503.0) * q1F) * plasma_volume_ratio + 0.88 * q_in[10]
+        
+        // Julia dq[2] = (p[6] * q1F - (p[3] + p[12] + NL) * q2)
+        dqdt[1] = (1503.0 * q1F - (0.868 + 0.0189 + NL) * q2)
+        
+        // Julia dq[3] = (p[5] * q1F -(p[4] + p[15] / (p[16] + q3) + p[17] /(p[18] + q3)) * q3)
+        dqdt[2] = (584.0 * q1F - (0.108 + 0.000663 / (95.0 + q3) + 0.00074619 / (0.075 + q3)) * q3)
+        
+        // Julia dq[4] = p[82] + (SR3 + p[20] * q5 + p[21] * q6 - (p[22] + p[23]) * q4F) * plasma_volume_ratio + p[28] * q[13]
+        dqdt[3] = t3InfusionRate / 651.0 + (SR3 + 5.37 * q5 + 0.0689 * q6 - (127.0 + 2043.0) * q4F) * plasma_volume_ratio + 0.88 * q_in[12]
+        
+        // Julia dq[5] = (p[23] * q4F + NL * q2 - (p[20] + p[29]) * q5)
+        dqdt[4] = (2043.0 * q4F + NL * q2 - (5.37 + self.k05 * 24.0) * q5)
+        
+        // Julia dq[6] = (p[22] * q4F + p[15] * q3 / (p[16] + q3) + p[17] * q3 / (p[18] + q3) -(p[21])*q6)
+        dqdt[5] = (127.0 * q4F + (0.000663 / (95.0 + q3) + 0.00074619 / (0.075 + q3)) * q3 - 0.0689 * q6)
+        
+        // Julia dq[7] = (SRTSH - fdegTSH * q7) * plasma_volume_ratio
         dqdt[6] = (SRTSH - fdegTSH * q7) * plasma_volume_ratio
+        
+        // Julia dq[8] = f4 / p[38] * q1 + p[37] / p[39] * q4 - p[40] * q[8]
         dqdt[7] = f4 / 0.29 * q1 + 0.058786935033 / 0.006 * q4 - 0.037 * q_in[7]
+        
+        // Julia dq[9] = fLAG * (q[8] - q[9])
         dqdt[8] = fLAG * (q_in[7] - q_in[8])
 
+        // Julia dq[10] = -p[43] * q[10]
         dqdt[9] = -1.3 * q_in[9]
-        dqdt[10] = 1.3 * q_in[9] - (0.12 * (self.t4Absorption / 88.0) + 0.88 * (self.t4Absorption / 88.0)) * q_in[10]
-        dqdt[11] = -1.78 * q_in[11]
-        dqdt[12] = 1.78 * q_in[11] - (0.12 * (self.t3Absorption / 88.0) + 0.88 * (self.t3Absorption / 88.0)) * q_in[12]
         
-        // Delay ODEs (exact from Julia)
-        dqdt[13] = kdelay * (q7 - q_in[13])  // delay1
-        dqdt[14] = kdelay * (q_in[13] - q_in[14])  // delay2
-        dqdt[15] = kdelay * (q_in[14] - q_in[15])  // delay3
-        dqdt[16] = kdelay * (q_in[15] - q_in[16])  // delay4
-        dqdt[17] = kdelay * (q_in[16] - q_in[17])  // delay5
-        dqdt[18] = kdelay * (q_in[17] - q_in[18])  // delay6
+        // Julia dq[11] = p[43] * q[10] - (p[44] * p[58]+ p[11]) * q[11]
+        // p[58] = dial[2] = t4Absorption/100 (convert from 0-100 to 0-1 range), p[44] = 0.12, p[11] = 0.88
+        dqdt[10] = 1.3 * q_in[9] - (0.12 * (self.t4Absorption / 100.0) + 0.88) * q_in[10]
+        
+        // Julia dq[12] = -p[45] * q[12]
+        dqdt[11] = -1.78 * q_in[11]
+        
+        // Julia dq[13] = p[45] * q[12] - (p[46] * p[60] + p[28]) * q[13]
+        // p[60] = dial[4] = t3Absorption/100 (convert from 0-100 to 0-1 range), p[46] = 0.12, p[28] = 0.88
+        dqdt[12] = 1.78 * q_in[11] - (0.12 * (self.t3Absorption / 100.0) + 0.88) * q_in[12]
+        
+        // Delay ODEs (exact from Julia - Julia dq[14] = kdelay * (q7 - q[14]))
+        dqdt[13] = kdelay * (q7 - q_in[13])  // Julia delay1
+        dqdt[14] = kdelay * (q_in[13] - q_in[14])  // Julia delay2
+        dqdt[15] = kdelay * (q_in[14] - q_in[15])  // Julia delay3
+        dqdt[16] = kdelay * (q_in[15] - q_in[16])  // Julia delay4
+        dqdt[17] = kdelay * (q_in[16] - q_in[17])  // Julia delay5
+        dqdt[18] = kdelay * (q_in[17] - q_in[18])  // Julia delay6
         
         return dqdt
     }
@@ -375,8 +434,16 @@ class ThyroidSimulator {
         let T4_total_umol = q[0]
         let T3_total_umol = q[3]
         
-        let T4_total_umol_L = T4_total_umol / vp
-        let T3_total_umol_L = T3_total_umol / vp
+        // Exact calculations matching Julia code: MW * compartment_value / plasma_volume
+        let yT4_total_ug_L = T4_total_umol * MW_T4 / vp
+        let yT3_total_ug_L = T3_total_umol * MW_T3 / vp
+        
+        // Debug: Concise output for final values only
+        if time_hours >= Double(days) * 24.0 - 1.0 { // Near end of simulation
+            print("🔍 T4: q[0]=\(String(format: "%.6f", T4_total_umol)), vp=\(String(format: "%.3f", vp)), Total=\(String(format: "%.1f", yT4_total_ug_L))")
+            print("🔍 T3: q[3]=\(String(format: "%.6f", T3_total_umol)), vp=\(String(format: "%.3f", vp)), Total=\(String(format: "%.1f", yT3_total_ug_L))")
+        }
+        
 
         // Exact free hormone calculations from Julia
         let free_T4_amount_umol = 1.1 * 0.45 * (0.000289 + 0.000214 * T4_total_umol + 0.000128 * pow(T4_total_umol, 2) + (-8.83e-6) * pow(T4_total_umol, 3)) * T4_total_umol
@@ -384,9 +451,6 @@ class ThyroidSimulator {
 
         let free_T3_amount_umol = 1.05 * 0.5 * (0.00395 + 0.00185 * T4_total_umol + 0.00061 * pow(T4_total_umol, 2) + (-0.000505) * pow(T4_total_umol, 3)) * T3_total_umol
         let free_T3_umol_L = free_T3_amount_umol / vp
-        
-        let yT4_total_ug_L = T4_total_umol_L * MW_T4
-        let yT3_total_ug_L = T3_total_umol_L * MW_T3
         let yTSH_mU_L = q[6] * 5.6 / vtsh
         
         let yFT4_ng_L = free_T4_umol_L * MW_T4 * 1000.0

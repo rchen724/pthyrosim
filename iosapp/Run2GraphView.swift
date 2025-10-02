@@ -34,7 +34,7 @@ struct Run2GraphView: View {
                 values: t4GraphData_Run2,
                 color: .blue,
                 secondaryValues: showPreviousRuns ? previousT4GraphData : nil,
-                secondaryColor: .orange,
+                secondaryColor: .red.opacity(0.8),
                 yAxisRange: calculateYAxisDomain(for: t4GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
@@ -47,7 +47,7 @@ struct Run2GraphView: View {
                 values: t3GraphData_Run2,
                 color: .blue,
                 secondaryValues: showPreviousRuns ? previousT3GraphData : nil,
-                secondaryColor: .orange,
+                secondaryColor: .red.opacity(0.8),
                 yAxisRange: calculateYAxisDomain(for: t3GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
@@ -60,7 +60,7 @@ struct Run2GraphView: View {
                 values: tshGraphData_Run2,
                 color: .blue,
                 secondaryValues: showPreviousRuns ? previousTshGraphData : nil,
-                secondaryColor: .orange,
+                secondaryColor: .red.opacity(0.8),
                 yAxisRange: calculateYAxisDomain(for: tshGraphData_Run2.map { $0.1 }, title: "TSH"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
@@ -86,20 +86,19 @@ struct Run2GraphView: View {
                         .pickerStyle(.segmented)
                         
                         VStack(spacing: 8) {
-                            HStack {
-                                Text("Normal ranges shown in yellow")
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                                
-                                Spacer()
-                                
-                                Toggle("Show Previous Runs", isOn: $showPreviousRuns)
-                                    .font(.footnote)
-                            }
+                            Text("Normal ranges shown in yellow")
+                                .font(.footnote)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             
+                            Toggle("Show Previous Runs", isOn: $showPreviousRuns)
+                                .font(.footnote)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            // Legend for Run 2 graphs
                             if showPreviousRuns {
                                 HStack(spacing: 20) {
-                                    HStack(spacing: 4) {
+                                    HStack(spacing: 6) {
                                         Rectangle()
                                             .fill(Color.blue)
                                             .frame(width: 20, height: 3)
@@ -107,15 +106,15 @@ struct Run2GraphView: View {
                                             .font(.caption)
                                     }
                                     
-                                    HStack(spacing: 4) {
+                                    HStack(spacing: 6) {
                                         Rectangle()
-                                            .fill(Color.orange)
+                                            .fill(Color.red.opacity(0.8))
                                             .frame(width: 20, height: 3)
                                         Text("Previous Run")
                                             .font(.caption)
                                     }
                                 }
-                                .padding(.horizontal)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
 
@@ -131,7 +130,7 @@ struct Run2GraphView: View {
                     values: t4GraphData_Run2,
                     color: .blue,
                     secondaryValues: showPreviousRuns ? previousT4GraphData : nil,
-                    secondaryColor: .orange,
+                    secondaryColor: .red.opacity(0.8),
                     yAxisRange: calculateYAxisDomain(for: t4GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange
@@ -144,7 +143,7 @@ struct Run2GraphView: View {
                     values: t3GraphData_Run2,
                     color: .blue,
                     secondaryValues: showPreviousRuns ? previousT3GraphData : nil,
-                    secondaryColor: .orange,
+                    secondaryColor: .red.opacity(0.8),
                     yAxisRange: calculateYAxisDomain(for: t3GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange
@@ -157,7 +156,7 @@ struct Run2GraphView: View {
                     values: tshGraphData_Run2,
                     color: .blue,
                     secondaryValues: showPreviousRuns ? previousTshGraphData : nil,
-                    secondaryColor: .orange,
+                    secondaryColor: .red.opacity(0.8),
                     yAxisRange: calculateYAxisDomain(for: tshGraphData_Run2.map { $0.1 }, title: "TSH"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange

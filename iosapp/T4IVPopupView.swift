@@ -88,9 +88,9 @@ struct T4IVPopupView: View {
                         .ignoresSafeArea()
                     
                     // Popup itself
-                    ErrorPopup(message: errorMessage) {
+                    ErrorPopup(message: errorMessage, onDismiss: {
                         showErrorPopup = false
-                    }
+                    })
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.clear) // Ensure it takes full space
@@ -127,9 +127,10 @@ struct T4IVPopupView: View {
         // validated
         onSave(newT4IVInput)
         dismiss()
-        func showError(_ message: String) {
-            errorMessage = message
-            showErrorPopup = true
-        }
+    }
+    
+    func showError(_ message: String) {
+        errorMessage = message
+        showErrorPopup = true
     }
 }

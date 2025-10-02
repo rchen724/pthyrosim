@@ -45,6 +45,8 @@ struct Step1View: View {
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .padding(.top)
+                        
+                    
                         VStack(alignment: .leading, spacing: 6) {
 
                             HStack(alignment: .top, spacing: 4) {
@@ -52,10 +54,25 @@ struct Step1View: View {
                                 Text("•")
                                     .font(.subheadline)
                                     .foregroundColor(.white)
-                                    .frame(width: 20, alignment: .leading) // Fixed width to separate from text
+                                    // Fixed width to separate from text
 
                                 // Centered text
-                                Text("To simulate hypothyroidism or malabsorption conditions")
+                                Text("Normal euthyroid defaults shown")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity, alignment: .center) // Centers within available space
+                            } 
+
+                            HStack(alignment: .top, spacing: 4) {
+                                // Bullet stays leading
+                                Text("•")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    // Fixed width to separate from text
+
+                                // Centered text
+                                Text("To simulate hypothyroidism or malabsorption conditions:")
                                     .font(.subheadline)
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
@@ -67,7 +84,7 @@ struct Step1View: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
                                 VStack(alignment: .center) {
-                                    Text("To Change T3/T4 secretion rate SR (% of normal)")
+                                    Text("Change T3/T4 secretion rate SR (% of normal)")
                                         .multilineTextAlignment(.center)
                                         .font(.subheadline)
                                         .foregroundColor(.white)
@@ -79,7 +96,7 @@ struct Step1View: View {
                                     .font(.subheadline)
                                     .foregroundColor(.white)
                                 VStack(alignment: .center) {
-                                    Text("To modify oral absorption from 88%: change T3/T4 absorption")
+                                    Text("Modify T3/T4 oral absorption from 88%")
                                         .font(.subheadline)
                                         .foregroundColor(.white)
                                         .multilineTextAlignment(.center)
@@ -87,10 +104,7 @@ struct Step1View: View {
                             }
 
                         }
-                        Text("(Normal Defaults Shown)")
-                            .font(.footnote)
-                            .foregroundColor(.white)
-                            .frame(alignment: .center)
+
 
 
                         Group {
@@ -147,10 +161,6 @@ struct Step1View: View {
                         }
 
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("CLICK ON (to RED) to change starting hormone values if secretion/absorption rates are changed from the defaults.")
-                                .font(.footnote)
-                                .foregroundColor(.white)
-
                             Toggle(isOn: $isInitialConditionsOn) {
                                 Text("Recalculate Initial Conditions")
                                     .foregroundColor(.white)

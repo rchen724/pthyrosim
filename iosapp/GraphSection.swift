@@ -76,7 +76,29 @@ struct GraphSection: View {
             HStack {
                 Text(title).font(.headline)
                 Spacer()
-                Button { self.resetZoomAndPan() } label: { Image(systemName: "arrow.uturn.backward.circle").font(.title3) }.buttonStyle(.borderless)
+                // Zoom controls moved to top
+                HStack(spacing: 8) {
+                    Button { self.zoom(by: 1.25) } label: { 
+                        Image(systemName: "minus.magnifyingglass")
+                            .font(.callout)
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    
+                    Button { self.zoom(by: 0.8) } label: { 
+                        Image(systemName: "plus.magnifyingglass")
+                            .font(.callout)
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    
+                    Button { self.resetZoomAndPan() } label: { 
+                        Image(systemName: "arrow.uturn.backward.circle")
+                            .font(.callout)
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                }
             }
             .padding(.horizontal)
             
@@ -126,23 +148,23 @@ struct GraphSection: View {
                         "Tertiary": tertiaryColor ?? .green
                     ])
                     .chartLineStyleScale([
-                        "Current": StrokeStyle(lineWidth: 2.5),
-                        "Secondary": StrokeStyle(lineWidth: 2.5, dash: [5, 5]),
-                        "Tertiary": StrokeStyle(lineWidth: 2.5, dash: [10, 5])
+                        "Current": StrokeStyle(lineWidth: 4.0),
+                        "Secondary": StrokeStyle(lineWidth: 3.0),
+                        "Tertiary": StrokeStyle(lineWidth: 2.5)
                     ])
                     // --- AXIS FIXES ARE HERE ---
                     .chartYAxis {
                         // Use the new helper function to generate detailed grid lines
                         AxisMarks(position: .leading, values: generateAxisValues(for: currentYDomain, title: title)) {
-                            AxisGridLine()
+                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [1, 1]))
                             AxisTick()
                             AxisValueLabel()
                         }
                     }
                     .chartXAxis {
-                        // Manually specify X-axis steps for consistency
-                        AxisMarks(position: .bottom, values: Array(stride(from: 0, through: 100, by: 0.5))) {
-                            AxisGridLine()
+                        // Enhanced X-axis with better grid spacing
+                        AxisMarks(position: .bottom, values: generateXAxisValues(for: currentXDomain)) {
+                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [1, 1]))
                             AxisTick()
                             AxisValueLabel()
                         }
@@ -150,6 +172,7 @@ struct GraphSection: View {
                     .chartXScale(domain: currentXDomain)
                     .chartYScale(domain: currentYDomain)
                     .chartPlotStyle { $0.clipped() }
+                    .chartLegend(.hidden)
                     .background(Color(UIColor.systemGray6)).cornerRadius(8)
                     .chartOverlay { proxy in
                         GeometryReader { geo in
@@ -161,18 +184,13 @@ struct GraphSection: View {
                         }
                     }
                     .frame(height: 250).padding(.horizontal)
-                    
-                    HStack {
-                        Button { self.zoom(by: 1.25) } label: { Image(systemName: "minus.magnifyingglass") }
-                        Button { self.zoom(by: 0.8) } label: { Image(systemName: "plus.magnifyingglass") }
-                    }.font(.title2).padding().background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10)).padding([.trailing, .bottom], 10).buttonStyle(.borderless)
                 }
             }
         }
         .onChange(of: yAxisRange) { resetZoomAndPan() }
     }
 
-    // --- NEW HELPER FUNCTION TO GENERATE DETAILED AXIS VALUES ---
+    // --- HELPER FUNCTION TO GENERATE DETAILED AXIS VALUES ---
     private func generateAxisValues(for domain: ClosedRange<Double>, title: String) -> [Double] {
         let step: Double
         // Define the step size for each hormone to match the target images
@@ -189,6 +207,29 @@ struct GraphSection: View {
         
         // Create an array of values from 0 up to the domain's upper bound
         let values = Array(stride(from: 0, through: domain.upperBound, by: step))
+        return values
+    }
+    
+    // --- HELPER FUNCTION TO GENERATE X-AXIS VALUES ---
+    private func generateXAxisValues(for domain: ClosedRange<Double>) -> [Double] {
+        let range = domain.upperBound - domain.lowerBound
+        let step: Double
+        
+        // Determine appropriate step size based on the range
+        if range <= 1 {
+            step = 0.1
+        } else if range <= 5 {
+            step = 0.5
+        } else if range <= 10 {
+            step = 1.0
+        } else if range <= 30 {
+            step = 2.0
+        } else {
+            step = 5.0
+        }
+        
+        // Create an array of values from the domain's lower bound to upper bound
+        let values = Array(stride(from: domain.lowerBound, through: domain.upperBound, by: step))
         return values
     }
     

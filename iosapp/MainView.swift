@@ -1,6 +1,9 @@
 import SwiftUI
 import UIKit
 
+// Import the required views
+// Note: These should be automatically available if they're in the same target
+
 struct MainView: View {
     @State private var selectedTab = 0
     
