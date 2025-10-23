@@ -2,15 +2,15 @@ import SwiftUI
 import Charts
 
 private enum HormoneType: String, CaseIterable {
-    case total = "Total"
     case free = "Free"
+    case total = "Total"
 }
 
 struct SimulationGraphView: View {
     let result: ThyroidSimulationResult
     let simulationDurationDays: Int
 
-    @State private var selectedHormoneType: HormoneType = .total
+    @State private var selectedHormoneType: HormoneType = .free
     @State private var showNormalRange: Bool = true
     
     @State private var pdfURL: URL?
@@ -21,7 +21,7 @@ struct SimulationGraphView: View {
     private var viewToRender: some View {
         VStack(spacing: 20) {
             Text("Euthyroid Simulation")
-                .font(.largeTitle).fontWeight(.bold).padding(.top)
+                .font(.title).fontWeight(.bold).padding(.top)
 
             let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
             
@@ -70,29 +70,28 @@ struct SimulationGraphView: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    Text("Euthyroid Simulation")
-                        .font(.largeTitle).fontWeight(.bold).padding(.top)
 
-                    VStack(spacing: 15) {
+                    VStack(spacing: 6) {              // was 15
                         Picker("Hormone Type", selection: $selectedHormoneType) {
                             ForEach(HormoneType.allCases, id: \.self) { Text($0.rawValue) }
                         }
                         .pickerStyle(.segmented)
-                        .padding(.horizontal)
+                        .controlSize(.small)          // smaller segmented control
+                        .padding(.horizontal, 8)      // was full .padding(.horizontal)
 
-                        //Toggle(isOn: $showNormalRange) {
-                        //    Text("Show Normal Range").fontWeight(.medium)
-                        //}
-                        //.padding(.horizontal)
                         Text("Normal ranges shown in yellow below")
-                        .font(.footnote)
-                        .fontWeight(.bold)
-                        
+                            .font(.footnote).fontWeight(.bold)
+                            .padding(.top, 2)         // was more implicit spacing
                     }
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 4)            // was 10
+
+                    
 
                     let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
                     
+                    let sectionHeight: CGFloat = 150
+                    let lineWidth: CGFloat = 1.2
+
                     GraphSection(
                         title: selectedHormoneType == .free ? "Free T4" : "T4",
                         yLabel: selectedHormoneType == .free ? "FT4 (ng/dL)" : "T4 (µg/L)",
@@ -101,17 +100,21 @@ struct SimulationGraphView: View {
                         color: .blue,
                         yAxisRange: calculateYAxisDomain(for: t4GraphData.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                         xAxisRange: effectiveXAxisRange,
+                        height: sectionHeight,          // NEW
+                        lineWidth: lineWidth,           // NEW
                         showNormalRange: $showNormalRange
                     )
 
                     GraphSection(
                         title: selectedHormoneType == .free ? "Free T3" : "T3",
-                        yLabel: selectedHormoneType == .free ? "FT3 (pg/mL)" : "T3 (ng/dL)",
+                        yLabel: selectedHormoneType == .free ? "FT3 (ng/dL)" : "T3 (ng/dL)",
                         xLabel: "Days",
                         values: t3GraphData,
                         color: .blue,
                         yAxisRange: calculateYAxisDomain(for: t3GraphData.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                         xAxisRange: effectiveXAxisRange,
+                        height: sectionHeight,          // NEW
+                        lineWidth: lineWidth,           // NEW
                         showNormalRange: $showNormalRange
                     )
 
@@ -123,6 +126,8 @@ struct SimulationGraphView: View {
                         color: .blue,
                         yAxisRange: calculateYAxisDomain(for: tshGraphData.map { $0.1 }, title: "TSH"),
                         xAxisRange: effectiveXAxisRange,
+                        height: sectionHeight,          // NEW
+                        lineWidth: lineWidth,           // NEW
                         showNormalRange: $showNormalRange
                     )
                 }

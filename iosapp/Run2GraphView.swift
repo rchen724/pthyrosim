@@ -3,8 +3,8 @@ import Charts
 
 struct Run2GraphView: View {
     private enum HormoneType: String, CaseIterable {
-        case total = "Total"
         case free = "Free"
+        case total = "Total"
     }
     
     let run2Result: ThyroidSimulationResult
@@ -77,7 +77,7 @@ struct Run2GraphView: View {
                     .font(.title2).bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                    VStack(spacing: 15) {
+                    VStack(spacing: 6) {
                         Picker("Hormone Type", selection: $selectedHormoneType) {
                             ForEach(HormoneType.allCases, id: \.self) {
                                 Text($0.rawValue)

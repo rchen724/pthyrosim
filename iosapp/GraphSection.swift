@@ -20,6 +20,8 @@ struct GraphSection: View {
     let tertiaryColor: Color?
     let yAxisRange: ClosedRange<Double>
     let xAxisRange: ClosedRange<Double>
+    let height: CGFloat        // NEW
+    let lineWidth: CGFloat     // NEW
     @Binding var showNormalRange: Bool
     @State private var currentXDomain: ClosedRange<Double>
     @State private var currentYDomain: ClosedRange<Double>
@@ -28,7 +30,16 @@ struct GraphSection: View {
     @State private var currentMagnification: CGFloat = 1.0
     @State private var selectedDataPoint: (time: Double, value: Double)? = nil
     
-    init(title: String, yLabel: String, xLabel: String, values: [(Double, Double)], color: Color, secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil, tertiaryValues: [(Double, Double)]? = nil, tertiaryColor: Color? = nil, yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>, showNormalRange: Binding<Bool>) {
+    init(
+        title: String, yLabel: String, xLabel: String,
+        values: [(Double, Double)], color: Color,
+        secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil,
+        tertiaryValues: [(Double, Double)]? = nil,   tertiaryColor: Color? = nil,
+        yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>,
+        height: CGFloat = 150,        // NEW default (smaller)
+        lineWidth: CGFloat = 1.2,     // NEW default (thinner)
+        showNormalRange: Binding<Bool>
+    ) {
         self.title = title
         self.yLabel = yLabel
         self.xLabel = xLabel
@@ -41,130 +52,93 @@ struct GraphSection: View {
         self._showNormalRange = showNormalRange
         self.yAxisRange = yAxisRange
         self.xAxisRange = xAxisRange
+        self.height = height
+        self.lineWidth = lineWidth
         _currentYDomain = State(initialValue: yAxisRange)
         _currentXDomain = State(initialValue: 0...max(5, xAxisRange.upperBound))
     }
     
-    // Combined data for Chart
     private var chartData: [ChartDataPoint] {
         var data: [ChartDataPoint] = []
-        
-        // Add primary data
-        for (x, y) in values {
-            data.append(ChartDataPoint(x: x, y: y, series: "Current"))
-        }
-        
-        // Add secondary data if available
-        if let secondaryValues = secondaryValues {
-            for (x, y) in secondaryValues {
-                data.append(ChartDataPoint(x: x, y: y, series: "Secondary"))
-            }
-        }
-        
-        // Add tertiary data if available
-        if let tertiaryValues = tertiaryValues {
-            for (x, y) in tertiaryValues {
-                data.append(ChartDataPoint(x: x, y: y, series: "Tertiary"))
-            }
-        }
-        
+        for (x, y) in values { data.append(.init(x: x, y: y, series: "Current")) }
+        if let s = secondaryValues { for (x, y) in s { data.append(.init(x: x, y: y, series: "Secondary")) } }
+        if let t = tertiaryValues  { for (x, y) in t { data.append(.init(x: x, y: y, series: "Tertiary")) } }
         return data
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title).font(.headline)
                 Spacer()
-                // Zoom controls moved to top
-                HStack(spacing: 8) {
-                    Button { self.zoom(by: 1.25) } label: { 
-                        Image(systemName: "minus.magnifyingglass")
-                            .font(.callout)
-                            .foregroundColor(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    
-                    Button { self.zoom(by: 0.8) } label: { 
-                        Image(systemName: "plus.magnifyingglass")
-                            .font(.callout)
-                            .foregroundColor(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    
-                    Button { self.resetZoomAndPan() } label: { 
-                        Image(systemName: "arrow.uturn.backward.circle")
-                            .font(.callout)
-                            .foregroundColor(.secondary)
-                    }
-                    .buttonStyle(.borderless)
+                HStack(spacing: 6) {
+                    Button { self.zoom(by: 1.25) } label: { Image(systemName: "minus.magnifyingglass").font(.caption).foregroundColor(.secondary) }
+                        .buttonStyle(.borderless)
+                    Button { self.zoom(by: 0.8) } label: { Image(systemName: "plus.magnifyingglass").font(.caption).foregroundColor(.secondary) }
+                        .buttonStyle(.borderless)
+                    Button { self.resetZoomAndPan() } label: { Image(systemName: "arrow.uturn.backward.circle").font(.caption).foregroundColor(.secondary) }
+                        .buttonStyle(.borderless)
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 8)
             
             if values.isEmpty {
-                ContentUnavailableView("No Data", systemImage: "chart.bar.xaxis.ascending").frame(height: 250)
+                ContentUnavailableView("No Data", systemImage: "chart.bar.xaxis.ascending")
+                    .frame(height: height)
             } else {
                 ZStack(alignment: .bottomTrailing) {
                     Chart {
                         if showNormalRange, let range = self.normalRange(for: title) {
                             RectangleMark(
-                               xStart: .value("X Start", currentXDomain.lowerBound),
-                               xEnd: .value("X End", currentXDomain.upperBound),
-                               yStart: .value("Normal Min", range.lowerBound),
-                               yEnd: .value("Normal Max", range.upperBound)
-                            ).foregroundStyle(Color.yellow.opacity(0.2))
-                        }
-                        
-                        ForEach(chartData) { dataPoint in
-                            LineMark(
-                                x: .value(xLabel, dataPoint.x),
-                                y: .value(yLabel, dataPoint.y)
+                                xStart: .value("X Start", currentXDomain.lowerBound),
+                                xEnd: .value("X End", currentXDomain.upperBound),
+                                yStart: .value("Normal Min", range.lowerBound),
+                                yEnd: .value("Normal Max", range.upperBound)
                             )
-                            .foregroundStyle(by: .value("Series", dataPoint.series))
-                            .lineStyle(by: .value("Series", dataPoint.series))
+                            .foregroundStyle(Color.yellow.opacity(0.18))
                         }
                         
-                        if let selectedDataPoint {
-                            RuleMark(x: .value("Selected Time", selectedDataPoint.time))
+                        ForEach(chartData) { p in
+                            LineMark(x: .value(xLabel, p.x), y: .value(yLabel, p.y))
+                                .foregroundStyle(by: .value("Series", p.series))
+                                .lineStyle(by: .value("Series", p.series))
+                        }
+                        
+                        if let s = selectedDataPoint {
+                            RuleMark(x: .value("Selected", s.time))
                                 .foregroundStyle(Color.gray.opacity(0.6))
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                            PointMark(
-                                x: .value("Selected Time", selectedDataPoint.time),
-                                y: .value("Selected Value", selectedDataPoint.value)
-                            ).symbolSize(CGSize(width: 8, height: 8)).foregroundStyle(color)
-                            .annotation(position: .top) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(String(format: "%@: %.2f", title, selectedDataPoint.value))
-                                    Text(String(format: "Time: %.2f", selectedDataPoint.time))
+                            PointMark(x: .value("Selected", s.time), y: .value("Value", s.value))
+                                .symbolSize(CGSize(width: 6, height: 6))
+                                .foregroundStyle(color)
+                                .annotation(position: .top) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(String(format: "%@: %.2f", title, s.value))
+                                        Text(String(format: "Day: %.2f", s.time))
+                                    }
+                                    .font(.caption2)
+                                    .padding(6)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(6)
                                 }
-                                .font(.caption).padding(6).background(Color(UIColor.systemGray5)).cornerRadius(6)
-                            }
                         }
                     }
-                    .chartForegroundStyleScale([
-                        "Current": color,
-                        "Secondary": secondaryColor ?? .orange,
-                        "Tertiary": tertiaryColor ?? .green
-                    ])
+                    .chartForegroundStyleScale(["Current": color, "Secondary": (secondaryColor ?? .orange), "Tertiary": (tertiaryColor ?? .green)])
                     .chartLineStyleScale([
-                        "Current": StrokeStyle(lineWidth: 4.0),
-                        "Secondary": StrokeStyle(lineWidth: 3.0),
-                        "Tertiary": StrokeStyle(lineWidth: 2.5)
+                        "Current": StrokeStyle(lineWidth: lineWidth),
+                        "Secondary": StrokeStyle(lineWidth: max(0.9, lineWidth - 0.3)),
+                        "Tertiary": StrokeStyle(lineWidth: max(0.8, lineWidth - 0.4))
                     ])
-                    // --- AXIS FIXES ARE HERE ---
                     .chartYAxis {
-                        // Use the new helper function to generate detailed grid lines
                         AxisMarks(position: .leading, values: generateAxisValues(for: currentYDomain, title: title)) {
-                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [1, 1]))
+                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4, dash: [1, 1]))
                             AxisTick()
                             AxisValueLabel()
                         }
                     }
                     .chartXAxis {
-                        // Enhanced X-axis with better grid spacing
                         AxisMarks(position: .bottom, values: generateXAxisValues(for: currentXDomain)) {
-                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [1, 1]))
+                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4, dash: [1, 1]))
                             AxisTick()
                             AxisValueLabel()
                         }
@@ -173,17 +147,20 @@ struct GraphSection: View {
                     .chartYScale(domain: currentYDomain)
                     .chartPlotStyle { $0.clipped() }
                     .chartLegend(.hidden)
-                    .background(Color(UIColor.systemGray6)).cornerRadius(8)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
                     .chartOverlay { proxy in
                         GeometryReader { geo in
                             Rectangle().fill(.clear).contentShape(Rectangle())
-                                .gesture(DragGesture(minimumDistance: 0)
-                                    .onChanged { updateSelectedDataPoint(at: $0.location, proxy: proxy, geometry: geo) }
-                                    .onEnded { _ in selectedDataPoint = nil }
+                                .gesture(
+                                    DragGesture(minimumDistance: 0)
+                                        .onChanged { updateSelectedDataPoint(at: $0.location, proxy: proxy, geometry: geo) }
+                                        .onEnded { _ in selectedDataPoint = nil }
                                 )
                         }
                     }
-                    .frame(height: 250).padding(.horizontal)
+                    .frame(height: height)
+                    .padding(.horizontal, 8)
                 }
             }
         }

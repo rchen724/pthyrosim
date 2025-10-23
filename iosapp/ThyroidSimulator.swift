@@ -44,6 +44,7 @@ class ThyroidSimulator {
     private let t3InfusionDoses: [T3InfusionDose]
     private let t4InfusionDoses: [T4InfusionDose]
     private let isInitialConditionsOn: Bool
+    private var tOffset: Double = 0.0
     var initialState: [Double]? = nil
 
     private let dt: Double = 0.05 // Smaller time step for higher accuracy (closer to Rodas5)
@@ -64,6 +65,25 @@ class ThyroidSimulator {
     // Infusion rates (in micrograms per hour)
     private var t4InfusionRate: Double = 0.0
     private var t3InfusionRate: Double = 0.0
+    
+    // Keeps starting concentrations the same after vp/vtsh scaling,
+    // and aligns the TSH delay chain to avoid the initial swoop.
+    private func seedICsForNoRecalcJump() {
+        self.q = self.defaultInitialConditions
+
+        let vpRatio   = vp   / 3.2
+        let vtshRatio = vtsh / 5.2
+
+        // Keep concentrations constant when vp/vtsh change
+        q[0] *= vpRatio   // T4 plasma
+        q[3] *= vpRatio   // T3 plasma
+        q[6] *= vtshRatio // TSH plasma
+
+        // Align TSH lag compartments with TSHp
+        for i in 13...18 { q[i] = q[6] }
+    }
+    
+    
 
     // MARK: - Initialization
     init(
@@ -113,6 +133,8 @@ class ThyroidSimulator {
             // Find steady state if requested
             if isInitialConditionsOn {
                 self.q = findSteadyState()
+            } else {
+                seedICsForNoRecalcJump()
             }
         }
     
@@ -120,6 +142,7 @@ class ThyroidSimulator {
             print("🚀 SIMULATOR (Run 2) - STARTING...")
             print("   - Initial 'q' vector: \(self.q)")
             print("   - Patient Vp: \(self.vp), Vtsh: \(self.vtsh), k05: \(self.k05)")
+            
         }
 
         var results = ThyroidSimulationResult()
@@ -131,6 +154,7 @@ class ThyroidSimulator {
         let logInterval: Double = 2.0
 
         logResults(time_hours: currentTime, results: &results)
+        
 
         while currentTime < totalTimeHours {
             let nextEventTime = (eventIndex < doseEvents.count) ? doseEvents[eventIndex].timeHours : totalTimeHours
@@ -152,6 +176,21 @@ class ThyroidSimulator {
             }
             
             logResults(time_hours: currentTime, results: &results)
+            let t4_total_ug_L_start = q[0] * 777.0 / vp
+
+            let ft4_ng_L_start: Double = {
+                // same formula you use in logResults, just local for the print
+                let q0 = q[0]
+                let free_T4_amount_umol =
+                    1.1 * 0.45
+                    * (0.000289 + 0.000214*q0 + 0.000128*q0*q0 - 8.83e-6*q0*q0*q0)
+                    * q0
+                let free_T4_umol_L = free_T4_amount_umol / vp
+                return free_T4_umol_L * 777.0 * 1000.0
+            }()
+
+            print(String(format: "START TT4 = %.2f ug/L | START FT4 = %.0f ng/L",
+                         t4_total_ug_L_start, ft4_ng_L_start))
             
             if eventIndex < doseEvents.count && abs(currentTime - nextEventTime) < dt / 2.0 {
                 applyImpulseDose(event: doseEvents[eventIndex])
@@ -222,34 +261,54 @@ class ThyroidSimulator {
         return events.sorted()
     }
 
-    private func createEvents<T>(from dose: T, hormone: DoseEvent.HormoneType, type: DoseEvent.DoseType, totalTime: Double) -> [DoseEvent] {
+    private func createEvents<T>(
+        from dose: T,
+        hormone: DoseEvent.HormoneType,
+        type: DoseEvent.DoseType,
+        totalTime: Double
+    ) -> [DoseEvent] {
         var doseEvents: [DoseEvent] = []
-        let doseAmount: Double, isSingleDose: Bool, startTimeDays: Double, endTimeDays: Double, intervalDays: Double
+
+        let doseAmount: Double, isSingle: Bool
+        let startDays: Double, endDays: Double, intervalDays: Double
 
         switch dose {
-            case let d as T4OralDose: (doseAmount, isSingleDose, startTimeDays, endTimeDays, intervalDays) = (Double(d.T4OralDoseInput), d.T4SingleDose, Double(d.T4OralDoseStart), Double(d.T4OralDoseEnd), Double(d.T4OralDoseInterval))
-            case let d as T3OralDose: (doseAmount, isSingleDose, startTimeDays, endTimeDays, intervalDays) = (Double(d.T3OralDoseInput), d.T3SingleDose, Double(d.T3OralDoseStart), Double(d.T3OralDoseEnd), Double(d.T3OralDoseInterval))
-            default: return []
+        case let d as T4OralDose:
+            (doseAmount, isSingle, startDays, endDays, intervalDays) =
+                (Double(d.T4OralDoseInput), d.T4SingleDose,
+                 Double(d.T4OralDoseStart), Double(d.T4OralDoseEnd), Double(d.T4OralDoseInterval))
+
+        case let d as T3OralDose:
+            (doseAmount, isSingle, startDays, endDays, intervalDays) =
+                (Double(d.T3OralDoseInput), d.T3SingleDose,
+                 Double(d.T3OralDoseStart), Double(d.T3OralDoseEnd), Double(d.T3OralDoseInterval))
+
+        default: return []
         }
 
-        let startTimeHours = startTimeDays * 24.0
+        let eps  = 1e-6
+        let startH = startDays * 24.0
+        let endH   = endDays   * 24.0
+        let intH   = max(intervalDays * 24.0, 1e-9)
 
-        if isSingleDose {
-            if startTimeHours <= totalTime {
-                doseEvents.append(DoseEvent(timeHours: startTimeHours, hormone: hormone, doseType: type, amountMicrograms: doseAmount, rateMicrogramsPerHour: 0))
+        if isSingle {
+            // If start is 0, nudge to epsilon so it doesn't alter the t=0 intercept
+            let t = max(startH, eps)
+            if t <= totalTime {
+                doseEvents.append(.init(timeHours: t, hormone: hormone, doseType: type,
+                                        amountMicrograms: doseAmount, rateMicrogramsPerHour: 0))
             }
         } else {
-            let endTimeHours = endTimeDays * 24.0
-            let intervalHours = intervalDays * 24.0
-            if intervalHours > 0 {
-                var currentTime = startTimeHours
-                while currentTime <= endTimeHours && currentTime <= totalTime {
-                    doseEvents.append(DoseEvent(timeHours: currentTime, hormone: hormone, doseType: type, amountMicrograms: doseAmount, rateMicrogramsPerHour: 0))
-                    currentTime += intervalHours
-                }
+            // first at start + interval (Julia-like) and never at t=0
+            var t = max(startH + intH, eps)
+            while t <= endH && t <= totalTime {
+                doseEvents.append(.init(timeHours: t, hormone: hormone, doseType: type,
+                                        amountMicrograms: doseAmount, rateMicrogramsPerHour: 0))
+                t += intH
             }
         }
-        return doseEvents
+
+        return doseEvents.sorted()
     }
     
     private func applyImpulseDose(event: DoseEvent) {
@@ -352,11 +411,11 @@ class ThyroidSimulator {
         
         // Scale compartment sizes (exact from Julia)
         let q1 = q_in[0] * 1.0 / plasma_volume_ratio  // q[1] * 1 / p[69]
-        let q2 = q_in[1] * 1.0  // q[2] * 1 
-        let q3 = q_in[2] * 1.0  // q[3] * 1 
+        let q2 = q_in[1] * 1.0  // q[2] * 1
+        let q3 = q_in[2] * 1.0  // q[3] * 1
         let q4 = q_in[3] * 1.0 / plasma_volume_ratio  // q[4] * 1 / p[69]
-        let q5 = q_in[4] * 1.0  // q[5] * 1 
-        let q6 = q_in[5] * 1.0  // q[6] * 1 
+        let q5 = q_in[4] * 1.0  // q[5] * 1
+        let q6 = q_in[5] * 1.0  // q[6] * 1
         let q7 = q_in[6] * 1.0 / plasma_volume_ratio  // q[7] * 1 / p[69]
 
         // Auxiliary equations (exact from Julia)
