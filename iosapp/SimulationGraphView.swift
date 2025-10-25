@@ -15,12 +15,16 @@ struct SimulationGraphView: View {
     
     @State private var pdfURL: URL?
     @State private var showShareSheet = false
+    
+    
+    @State private var testURL: URL?
+    @State private var showTestShare = false
 
     // --- CORRECTED VIEW FOR PDF EXPORT ---
     // This view now contains ONLY the elements we want in the PDF, excluding the problematic UI controls.
     private var viewToRender: some View {
         VStack(spacing: 20) {
-            Text("Euthyroid Simulation")
+            Text("Run 1 Simulation")
                 .font(.title).fontWeight(.bold).padding(.top)
 
             let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
@@ -69,7 +73,7 @@ struct SimulationGraphView: View {
             Color.white.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 10) {
 
                     VStack(spacing: 6) {              // was 15
                         Picker("Hormone Type", selection: $selectedHormoneType) {
@@ -135,7 +139,7 @@ struct SimulationGraphView: View {
                 .foregroundColor(.black)
             }
         }
-        .navigationTitle("Euthyroid Simulation")
+        .navigationTitle("Run 1 Simulation")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -151,6 +155,9 @@ struct SimulationGraphView: View {
                         } label: {
                             Image(systemName: "square.and.arrow.up")
                         }
+
+
+ 
                     }
                 }
                 .sheet(isPresented: $showShareSheet) {

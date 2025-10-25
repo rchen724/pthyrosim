@@ -1,4 +1,4 @@
-//  Run3T3InfusionPopupView.swift
+//  Run2T3InfusionPopupView.swift
 //  iosapp
 //
 //  Created for Run3 dose input
@@ -6,13 +6,13 @@
 
 import SwiftUI
 
-struct Run3T3InfusionPopupView: View {
+struct Run2T3InfusionPopupView: View {
     @Environment(\.dismiss) var dismiss
     @AppStorage("selectedMainTab") private var selectedTab: Int = 0
     
-    @AppStorage("Run3T3InfusionDoseInput") private var T3InfusionDoseInput = ""
-    @AppStorage("Run3T3InfusionDoseStart") private var T3InfusionDoseStart = ""
-    @AppStorage("Run3T3InfusionDoseEnd") private var T3InfusionDoseEnd = ""
+    @AppStorage("Run2T3InfusionDoseInput") private var T3InfusionDoseInput = ""
+    @AppStorage("Run2T3InfusionDoseStart") private var T3InfusionDoseStart = ""
+    @AppStorage("Run2T3InfusionDoseEnd") private var T3InfusionDoseEnd = ""
     
     @State private var showErrorPopup = false
     @State private var errorMessage = ""
@@ -30,7 +30,7 @@ struct Run3T3InfusionPopupView: View {
                                 Image("infusion1")
                                     .resizable()
                                     .frame(width: 30, height: 30)
-                                Text("T3-INFUSION DOSE (Run 3)")
+                                Text("T3-INFUSION DOSE (Run 2)")
                                     .font(.title3.bold())
                             }
                             VStack(alignment: .leading, spacing: 30) {
@@ -75,7 +75,7 @@ struct Run3T3InfusionPopupView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.black.edgesIgnoringSafeArea(.all))
-                .navigationTitle("Add T3 Infusion Dose (Run 3)")
+                .navigationTitle("Add T3 Infusion Dose (Run 2)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {

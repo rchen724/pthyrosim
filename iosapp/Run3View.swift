@@ -1,11 +1,14 @@
 import SwiftUI
 
+enum Run3StartScreen { case dosing, simulate }
+
 struct Run3View: View {
     @EnvironmentObject var simulationData: SimulationData
     @State private var run3Result: ThyroidSimulationResult? = nil
     @State private var isSimulating = false
     @State private var navigateToGraph = false
-    
+    @State private var navigateToDosingInput = false   // <-- new
+
     // AppStorage for Run 1 parameters (matching Step1View keys)
     @AppStorage("t4Secretion") private var t4Secretion = "100"
     @AppStorage("t3Secretion") private var t3Secretion = "100"
@@ -17,12 +20,16 @@ struct Run3View: View {
     @AppStorage("selectedWeightUnit") private var selectedWeightUnit = "kg"
     @AppStorage("selectedGender") private var selectedGender = "FEMALE"
     @AppStorage("simulationDays") private var simulationDays = "5"
-    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn = false
-    
-    
+    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn = true
+
+    // Where should Run3 open?
+    private let startAt: Run3StartScreen
+    init(startAt: Run3StartScreen = .simulate) {
+        self.startAt = startAt
+    }
+
     private var heightInMeters: Double? {
         guard let heightValue = Double(height) else { return nil }
-        
         if selectedHeightUnit == "cm" {
             return heightValue / 100.0
         } else if selectedHeightUnit == "in" {
@@ -31,10 +38,9 @@ struct Run3View: View {
             return heightValue
         }
     }
-    
+
     private var weightInKg: Double? {
         guard let weightValue = Double(weight) else { return nil }
-        
         if selectedWeightUnit == "lb" {
             return weightValue * 0.453592
         } else {
@@ -45,30 +51,30 @@ struct Run3View: View {
     var body: some View {
         NavigationStack {
             if simulationData.run2Result != nil {
-            ZStack {
-                Form {
+                ZStack {
+                    Form {
                         Section(header: Text("T4 Doses for Run 3 Dosing Simulation")) {
                             DoseDisplayView(doses: simulationData.run3T4oralinputs) { Text(format(dose: $0)) }
                             DoseDisplayView(doses: simulationData.run3T4ivinputs) { Text(format(dose: $0)) }
                             DoseDisplayView(doses: simulationData.run3T4infusioninputs) { Text(format(dose: $0)) }
                         }
-                        
+
                         Section(header: Text("T3 Doses for Run 3 Dosing Simulation")) {
                             DoseDisplayView(doses: simulationData.run3T3oralinputs) { Text(format(dose: $0)) }
                             DoseDisplayView(doses: simulationData.run3T3ivinputs) { Text(format(dose: $0)) }
                             DoseDisplayView(doses: simulationData.run3T3infusioninputs) { Text(format(dose: $0)) }
                         }
-                        
+
                         Section(header: Text("Configure Doses")) {
                             HStack {
                                 Image(systemName: "info.circle.fill")
                                     .foregroundColor(.blue)
-                                Text("Go to '3rd Dosing' tab to add/edit doses")
+                                Text("Go to 'More' tab to add/edit doses")
                                     .foregroundColor(.primary)
                                 Spacer()
                             }
                         }
-                        
+
                         Button(action: { runSimulationAndNavigate() }) {
                             HStack {
                                 Spacer()
@@ -83,32 +89,42 @@ struct Run3View: View {
                         }
                         .disabled(isSimulating)
                         .padding()
-                }
-                .navigationTitle("Configure Run 3 Dosing Simulation")
-                .navigationBarTitleDisplayMode(.inline)
-                .navigationDestination(isPresented: $navigateToGraph) {
-                    if let run3Result = run3Result, let days = Int(simulationDays) {
-                        Run3GraphView(run3Result: run3Result, simulationDurationDays: days)
+                    }
+                    .navigationTitle("Configure Run 3 Dosing Simulation")
+                    .navigationBarTitleDisplayMode(.inline)
+                    // Auto-push to dose-adding screen when asked to start at .dosing
+                    .navigationDestination(isPresented: $navigateToDosingInput) {
+                        Run3DosingInputView()
+                    }
+                    // Navigate to graphs after simulation
+                    .navigationDestination(isPresented: $navigateToGraph) {
+                        if let run3Result = run3Result, let days = Int(simulationDays) {
+                            Run3GraphView(run3Result: run3Result, simulationDurationDays: days)
+                        }
                     }
                 }
-            }
-            .onAppear {
-                if self.run3Result != nil {
-                    self.run3Result = nil
+                .onAppear {
+                    // Clear previous result if any
+                    if self.run3Result != nil {
+                        self.run3Result = nil
+                    }
+                    // If caller wants to land on the dose-adding page, push it
+                    if startAt == .dosing && !navigateToDosingInput {
+                        navigateToDosingInput = true
+                    }
                 }
+            } else {
+                VStack {
+                    Text("Please run the 'Simulate Dosing' (Run 2) simulation first.")
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+                .navigationTitle("Simulate Run 3")
             }
-        } else {
-            VStack {
-                Text("Please run the 'Simulate Dosing' (Run 2) simulation first.")
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                    .padding()
-            }
-            .navigationTitle("Simulate Run 3")
-        }
         }
     }
-    
+
     private func runSimulationAndNavigate() {
         guard let t4Sec = Double(t4Secretion), let t3Sec = Double(t3Secretion),
               let t4Abs = Double(t4Absorption), let t3Abs = Double(t3Absorption),
@@ -117,14 +133,14 @@ struct Run3View: View {
             print("Error: Invalid Run 1 parameters from AppStorage.")
             return
         }
-        
+
         guard !isSimulating else { return }
         isSimulating = true
-        
+
         Task {
             let heightInMeters = (selectedHeightUnit == "cm") ? hVal / 100.0 : ((selectedHeightUnit == "in") ? hVal * 0.0254 : hVal)
             let weightInKg = (selectedWeightUnit == "lb") ? wVal * 0.453592 : wVal
-            
+
             let simulator = ThyroidSimulator(
                 t4Secretion: t4Sec,
                 t3Secretion: t3Sec,
@@ -142,10 +158,8 @@ struct Run3View: View {
                 t4InfusionDoses: simulationData.run3T4infusioninputs,
                 isInitialConditionsOn: isInitialConditionsOn
             )
-            // Run 3 should be independent - start with fresh initial conditions
-            // simulator.initialState = simulationData.run2Result?.q_final  // REMOVED: Run 3 should be independent
             let result = simulator.runSimulation()
-            
+
             await MainActor.run {
                 self.run3Result = result
                 self.simulationData.previousRun3Results.append(result)
@@ -154,7 +168,7 @@ struct Run3View: View {
             }
         }
     }
-    
+
     // Format functions for dose display
     private func format(dose: T4OralDose) -> String {
         let formattedDose = String(format: "%.1f", dose.T4OralDoseInput)
@@ -162,33 +176,33 @@ struct Run3View: View {
         let formattedInterval = String(format: "%.1f", dose.T4OralDoseInterval)
         return "Oral T4: \(formattedDose)µg" + (dose.T4SingleDose ? " at day \(formattedStart)" : " every \(formattedInterval) days")
     }
-    
+
     private func format(dose: T3OralDose) -> String {
         let formattedDose = String(format: "%.1f", dose.T3OralDoseInput)
         let formattedStart = String(format: "%.1f", dose.T3OralDoseStart)
         let formattedInterval = String(format: "%.1f", dose.T3OralDoseInterval)
         return "Oral T3: \(formattedDose)µg" + (dose.T3SingleDose ? " at day \(formattedStart)" : " every \(formattedInterval) days")
     }
-    
+
     private func format(dose: T4IVDose) -> String {
         let formattedDose = String(format: "%.1f", dose.T4IVDoseInput)
         let formattedStart = String(format: "%.1f", dose.T4IVDoseStart)
         return "IV T4: \(formattedDose)µg at day \(formattedStart)"
     }
-    
+
     private func format(dose: T3IVDose) -> String {
         let formattedDose = String(format: "%.1f", dose.T3IVDoseInput)
         let formattedStart = String(format: "%.1f", dose.T3IVDoseStart)
         return "IV T3: \(formattedDose)µg at day \(formattedStart)"
     }
-    
+
     private func format(dose: T4InfusionDose) -> String {
         let formattedDose = String(format: "%.1f", dose.T4InfusionDoseInput)
         let formattedStart = String(format: "%.1f", dose.T4InfusionDoseStart)
         let formattedEnd = String(format: "%.1f", dose.T4InfusionDoseEnd)
         return "Infusion T4: \(formattedDose)µg from day \(formattedStart) to \(formattedEnd)"
     }
-    
+
     private func format(dose: T3InfusionDose) -> String {
         let formattedDose = String(format: "%.1f", dose.T3InfusionDoseInput)
         let formattedStart = String(format: "%.1f", dose.T3InfusionDoseStart)

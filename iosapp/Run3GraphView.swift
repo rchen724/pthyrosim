@@ -3,8 +3,8 @@ import Charts
 
 struct Run3GraphView: View {
     private enum HormoneType: String, CaseIterable {
-        case total = "Total"
         case free = "Free"
+        case total = "Total"
     }
     
     let run3Result: ThyroidSimulationResult
@@ -20,7 +20,7 @@ struct Run3GraphView: View {
 
     // --- CORRECTED VIEW FOR PDF EXPORT ---
     private var viewToRender: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 10) {
             Text("Run 3 Dosing Simulation Results")
                 .font(.title2).bold()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -78,12 +78,10 @@ struct Run3GraphView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                Text("Run 3 Dosing Simulation Results")
-                    .font(.title2).bold()
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(spacing: 5) {
+
                 
-                    VStack(spacing: 15) {
+                    VStack(spacing: 4) {
                         Picker("Hormone Type", selection: $selectedHormoneType) {
                             ForEach(HormoneType.allCases, id: \.self) {
                                 Text($0.rawValue)
@@ -91,7 +89,7 @@ struct Run3GraphView: View {
                         }
                         .pickerStyle(.segmented)
                         
-                        VStack(spacing: 8) {
+                        VStack(spacing: 6) {
                             Text("Normal ranges shown in yellow")
                                 .font(.footnote)
                                 .fontWeight(.bold)
@@ -136,7 +134,8 @@ struct Run3GraphView: View {
                     }
                 
                 let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
-
+                let h: CGFloat = 160
+                
                 GraphSection(
                     title: selectedHormoneType == .free ? "Free T4" : "T4",
                     yLabel: selectedHormoneType == .free ? "FT4 (ng/dL)" : "T4 (µg/L)",
@@ -149,7 +148,8 @@ struct Run3GraphView: View {
                     tertiaryColor: .purple,
                     yAxisRange: calculateYAxisDomain(for: t4GraphData_Run3.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                     xAxisRange: effectiveXAxisRange,
-                    showNormalRange: $showNormalRange
+                    showNormalRange: $showNormalRange,
+                    chartHeight: h
                 )
 
                 GraphSection(
@@ -164,7 +164,8 @@ struct Run3GraphView: View {
                     tertiaryColor: .purple,
                     yAxisRange: calculateYAxisDomain(for: t3GraphData_Run3.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                     xAxisRange: effectiveXAxisRange,
-                    showNormalRange: $showNormalRange
+                    showNormalRange: $showNormalRange,
+                    chartHeight: h
                 )
 
                 GraphSection(
@@ -179,7 +180,8 @@ struct Run3GraphView: View {
                     tertiaryColor: .purple,
                     yAxisRange: calculateYAxisDomain(for: tshGraphData_Run3.map { $0.1 }, title: "TSH"),
                     xAxisRange: effectiveXAxisRange,
-                    showNormalRange: $showNormalRange
+                    showNormalRange: $showNormalRange,
+                    chartHeight: h
                 )
             }
             .padding()

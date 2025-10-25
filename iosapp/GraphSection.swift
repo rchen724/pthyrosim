@@ -22,6 +22,7 @@ struct GraphSection: View {
     let xAxisRange: ClosedRange<Double>
     let height: CGFloat        // NEW
     let lineWidth: CGFloat     // NEW
+    let chartHeight: CGFloat
     @Binding var showNormalRange: Bool
     @State private var currentXDomain: ClosedRange<Double>
     @State private var currentYDomain: ClosedRange<Double>
@@ -38,7 +39,8 @@ struct GraphSection: View {
         yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>,
         height: CGFloat = 150,        // NEW default (smaller)
         lineWidth: CGFloat = 1.2,     // NEW default (thinner)
-        showNormalRange: Binding<Bool>
+        showNormalRange: Binding<Bool>,
+        chartHeight: CGFloat = 250
     ) {
         self.title = title
         self.yLabel = yLabel
@@ -54,6 +56,7 @@ struct GraphSection: View {
         self.xAxisRange = xAxisRange
         self.height = height
         self.lineWidth = lineWidth
+        self.chartHeight = chartHeight
         _currentYDomain = State(initialValue: yAxisRange)
         _currentXDomain = State(initialValue: 0...max(5, xAxisRange.upperBound))
     }

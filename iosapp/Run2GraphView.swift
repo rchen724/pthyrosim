@@ -2,6 +2,12 @@ import SwiftUI
 import Charts
 
 struct Run2GraphView: View {
+    // Deep-link targets
+    @AppStorage("selectedMainTab") private var selectedMainTab: Int = 0
+    @AppStorage("moreSelectedSubTab") private var moreSelectedSubTab: Int = 0
+    private let kMoreTabIndex: Int = 5      // <-- index of "More" in your MainView tabs
+    private let kDose3SubtabIndex: Int = 0  // <-- "Dose 3" inside MoreTabView
+
     private enum HormoneType: String, CaseIterable {
         case free = "Free"
         case total = "Total"
@@ -18,9 +24,9 @@ struct Run2GraphView: View {
     @State private var pdfURL: URL?
     @State private var showShareSheet = false
 
-    // --- CORRECTED VIEW FOR PDF EXPORT ---
+    // --- View for PDF export ---
     private var viewToRender: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 10) {
             Text("Dosing Simulation Results")
                 .font(.title2).bold()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,56 +78,40 @@ struct Run2GraphView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                Text("Dosing Simulation Results")
-                    .font(.title2).bold()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                    VStack(spacing: 6) {
-                        Picker("Hormone Type", selection: $selectedHormoneType) {
-                            ForEach(HormoneType.allCases, id: \.self) {
-                                Text($0.rawValue)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        
-                        VStack(spacing: 8) {
-                            Text("Normal ranges shown in yellow")
-                                .font(.footnote)
-                                .fontWeight(.bold)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            Toggle("Show Previous Runs", isOn: $showPreviousRuns)
-                                .font(.footnote)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            // Legend for Run 2 graphs
-                            if showPreviousRuns {
-                                HStack(spacing: 20) {
-                                    HStack(spacing: 6) {
-                                        Rectangle()
-                                            .fill(Color.blue)
-                                            .frame(width: 20, height: 3)
-                                        Text("Current Run")
-                                            .font(.caption)
-                                    }
-                                    
-                                    HStack(spacing: 6) {
-                                        Rectangle()
-                                            .fill(Color.red.opacity(0.8))
-                                            .frame(width: 20, height: 3)
-                                        Text("Previous Run")
-                                            .font(.caption)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                        }
-
-                        //Toggle("Show Normal Range", isOn: $showNormalRange)
+            VStack(spacing: 5) {
+                VStack(spacing: 4) {
+                    Picker("Hormone Type", selection: $selectedHormoneType) {
+                        ForEach(HormoneType.allCases, id: \.self) { Text($0.rawValue) }
                     }
-                
+                    .pickerStyle(.segmented)
+
+                    VStack(spacing: 6) {
+                        Text("Normal ranges shown in yellow")
+                            .font(.footnote).fontWeight(.bold)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Toggle("Show Previous Runs", isOn: $showPreviousRuns)
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        if showPreviousRuns {
+                            HStack(spacing: 16) {
+                                HStack(spacing: 6) {
+                                    Rectangle().fill(Color.blue).frame(width: 20, height: 2)
+                                    Text("Current Run").font(.caption2)
+                                }
+                                HStack(spacing: 6) {
+                                    Rectangle().fill(Color.red.opacity(0.8)).frame(width: 20, height: 2)
+                                    Text("Previous Run").font(.caption2)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+
                 let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
+                let h: CGFloat = 160 // tuned height so all 3 charts fit
 
                 GraphSection(
                     title: selectedHormoneType == .free ? "Free T4" : "T4",
@@ -133,7 +123,8 @@ struct Run2GraphView: View {
                     secondaryColor: .red.opacity(0.8),
                     yAxisRange: calculateYAxisDomain(for: t4GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                     xAxisRange: effectiveXAxisRange,
-                    showNormalRange: $showNormalRange
+                    showNormalRange: $showNormalRange,
+                    chartHeight: h
                 )
 
                 GraphSection(
@@ -146,7 +137,8 @@ struct Run2GraphView: View {
                     secondaryColor: .red.opacity(0.8),
                     yAxisRange: calculateYAxisDomain(for: t3GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                     xAxisRange: effectiveXAxisRange,
-                    showNormalRange: $showNormalRange
+                    showNormalRange: $showNormalRange,
+                    chartHeight: h
                 )
 
                 GraphSection(
@@ -159,16 +151,22 @@ struct Run2GraphView: View {
                     secondaryColor: .red.opacity(0.8),
                     yAxisRange: calculateYAxisDomain(for: tshGraphData_Run2.map { $0.1 }, title: "TSH"),
                     xAxisRange: effectiveXAxisRange,
-                    showNormalRange: $showNormalRange
+                    showNormalRange: $showNormalRange,
+                    chartHeight: h
                 )
             }
-            .padding()
+            .padding(.vertical, 8)
+            .padding(.horizontal, 20)
         }
         .navigationTitle("Dosing Simulation")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // Deep-link to More → Dose 3 (Run 3 dosing input)
             ToolbarItem(placement: .navigationBarLeading) {
-                NavigationLink(destination: Run3View()) {
+                Button {
+                    selectedMainTab = kMoreTabIndex
+                    moreSelectedSubTab = kDose3SubtabIndex
+                } label: {
                     Text("Run 3")
                         .font(.headline)
                         .foregroundColor(.blue)
@@ -177,10 +175,7 @@ struct Run2GraphView: View {
             
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    // --- CORRECTED BUTTON ACTION ---
-                    // Use a Task to run the async PDF rendering
                     Task {
-                        // 'await' waits for the function to finish and return the URL
                         let url = await renderViewToPDF(view: viewToRender)
                         self.pdfURL = url
                         self.showShareSheet = true
@@ -190,14 +185,14 @@ struct Run2GraphView: View {
                 }
             }
         }
-                .sheet(isPresented: $showShareSheet) {
-                    if let pdfURL {
-                        ShareSheet(activityItems: [pdfURL])
-                    }
-                }
+        .sheet(isPresented: $showShareSheet) {
+            if let pdfURL {
+                ShareSheet(activityItems: [pdfURL])
+            }
+        }
     }
     
-    // Helper functions for current run data
+    // MARK: - Data helpers
     private var t4GraphData_Run2: [(Double, Double)] {
         let sourceData = selectedHormoneType == .free ? run2Result.ft4 : run2Result.t4
         return zip(run2Result.time, sourceData).filter { $0.1.isFinite }
@@ -210,54 +205,37 @@ struct Run2GraphView: View {
         return zip(run2Result.time, run2Result.tsh).filter { $0.1.isFinite }
     }
     
-    // Helper functions for previous run data - shows only the MOST RECENT previous run
     private var previousT4GraphData: [(Double, Double)]? {
         guard showPreviousRuns else { return nil }
-        
-        // Get the most recent previous run
         if let mostRecentPreviousRun = getMostRecentPreviousRun() {
             let sourceData = selectedHormoneType == .free ? mostRecentPreviousRun.ft4 : mostRecentPreviousRun.t4
             return zip(mostRecentPreviousRun.time, sourceData).filter { $0.1.isFinite }
         }
-        
         return nil
     }
-    
     private var previousT3GraphData: [(Double, Double)]? {
         guard showPreviousRuns else { return nil }
-        
-        // Get the most recent previous run
         if let mostRecentPreviousRun = getMostRecentPreviousRun() {
             let sourceData = selectedHormoneType == .free ? mostRecentPreviousRun.ft3 : mostRecentPreviousRun.t3
             return zip(mostRecentPreviousRun.time, sourceData).filter { $0.1.isFinite }
         }
-        
         return nil
     }
-    
     private var previousTshGraphData: [(Double, Double)]? {
         guard showPreviousRuns else { return nil }
-        
-        // Get the most recent previous run
         if let mostRecentPreviousRun = getMostRecentPreviousRun() {
             return zip(mostRecentPreviousRun.time, mostRecentPreviousRun.tsh).filter { $0.1.isFinite }
         }
-        
         return nil
     }
     
-    // Helper function to get the most recent previous run
     private func getMostRecentPreviousRun() -> ThyroidSimulationResult? {
-        // For the first Run2, show Run1 data
         if simulationData.previousRun2Results.count <= 1, let run1Result = simulationData.run1Result {
             return run1Result
         }
-        
-        // For subsequent Run2s, show the immediately previous Run2
         if simulationData.previousRun2Results.count > 1 {
             return simulationData.previousRun2Results[simulationData.previousRun2Results.count - 2]
         }
-        
         return nil
     }
     
@@ -282,13 +260,15 @@ struct Run2GraphView: View {
     }
     private func calculateYAxisDomain(for values: [Double], title: String) -> ClosedRange<Double> {
         let dataRange = dynamicRange(for: values)
-        var upperBound: Double
-        if showNormalRange, let normalRange = getNormalRange(for: title) {
-            upperBound = max(dataRange.upperBound, normalRange.upperBound)
-        } else {
-            upperBound = dataRange.upperBound
-        }
+        let upperBound: Double = {
+            if showNormalRange, let normalRange = getNormalRange(for: title) {
+                return max(dataRange.upperBound, normalRange.upperBound)
+            } else {
+                return dataRange.upperBound
+            }
+        }()
         let padding = abs(upperBound) * 0.05
         return 0...(upperBound + padding)
     }
 }
+

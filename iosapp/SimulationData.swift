@@ -13,6 +13,15 @@ class SimulationData: ObservableObject {
     @Published var t4ivinputs: [T4IVDose] = []
     @Published var t4infusioninputs: [T4InfusionDose] = []
     
+    // Run2-specific dose arrays
+    @Published var run2T3oralinputs: [T3OralDose] = []
+    @Published var run2T3ivinputs: [T3IVDose] = []
+    @Published var run2T3infusioninputs: [T3InfusionDose] = []
+    
+    @Published var run2T4oralinputs: [T4OralDose] = []
+    @Published var run2T4ivinputs: [T4IVDose] = []
+    @Published var run2T4infusioninputs: [T4InfusionDose] = []
+    
     // Run3-specific dose arrays
     @Published var run3T3oralinputs: [T3OralDose] = []
     @Published var run3T3ivinputs: [T3IVDose] = []

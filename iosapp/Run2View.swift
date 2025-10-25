@@ -5,28 +5,29 @@ struct Run2View: View {
     @State private var run2Result: ThyroidSimulationResult?
     @State private var isSimulating: Bool = false
     @State private var navigateToGraph: Bool = false
+    @State private var navigateToDosingInput = false   // <-- new
     
     // Using AppStorage properties from SimulationView
     @AppStorage("t4Secretion") private var t4Secretion: String = "100"
     @AppStorage("t3Secretion") private var t3Secretion: String = "100"
     @AppStorage("t4Absorption") private var t4Absorption: String = "88"
     @AppStorage("t3Absorption") private var t3Absorption: String = "88"
-    @AppStorage("height") private var heightString: String = "1.65"
-    @AppStorage("weight") private var weightString: String = "60"
-    @AppStorage("selectedHeightUnit") private var heightUnit: String = "cm"
-    @AppStorage("selectedWeightUnit") private var weightUnit: String = "kg"
-    @AppStorage("selectedGender") private var gender: String = "Female"
+    @AppStorage("height") private var heightString: String = "170"
+    @AppStorage("weight") private var weightString: String = "70"
+    @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "cm"
+    @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg"
+    @AppStorage("selectedGender") private var selectedGender: String = "Female"
     @AppStorage("simulationDays") private var simulationDays: String = "5"
-    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
+    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = true
     
     private var heightInMeters: Double? {
           // Use the correct variable name: heightString
           guard let heightValue = Double(heightString) else { return nil }
           
           // Compare against the correct string-based unit
-          if heightUnit == "cm" {
+          if selectedHeightUnit == "cm" {
               return heightValue / 100.0
-          } else if heightUnit == "in" {
+          } else if selectedHeightUnit  == "in" {
               return heightValue * 0.0254
           } else { // Assumes meters by default
               return heightValue
@@ -37,7 +38,7 @@ struct Run2View: View {
           guard let weightValue = Double(weightString) else { return nil }
           
           // Compare against the correct string-based unit
-          if weightUnit == "lb" {
+          if selectedWeightUnit == "lb" {
               return weightValue * 0.453592
           } else { // Assumes kg by default
               return weightValue
@@ -52,15 +53,15 @@ struct Run2View: View {
                 ZStack {
                     Form {
                         Section(header: Text("T4 Doses for Dosing Simulation (from Dosing tab)")) {
-                            DoseDisplayView(doses: simulationData.t4oralinputs) { Text(format(dose: $0)) }
-                            DoseDisplayView(doses: simulationData.t4ivinputs) { Text(format(dose: $0)) }
-                            DoseDisplayView(doses: simulationData.t4infusioninputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.run2T4oralinputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.run2T4ivinputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.run2T4infusioninputs) { Text(format(dose: $0)) }
                         }
                         
                         Section(header: Text("T3 Doses for Dosing Simulation (from Dosing tab)")) {
-                            DoseDisplayView(doses: simulationData.t3oralinputs) { Text(format(dose: $0)) }
-                            DoseDisplayView(doses: simulationData.t3ivinputs) { Text(format(dose: $0)) }
-                            DoseDisplayView(doses: simulationData.t3infusioninputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.run2T3oralinputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.run2T3ivinputs) { Text(format(dose: $0)) }
+                            DoseDisplayView(doses: simulationData.run2T3infusioninputs) { Text(format(dose: $0)) }
                         }
                         Button(action: { runSimulationAndNavigate() }) {
                             HStack {
@@ -79,6 +80,9 @@ struct Run2View: View {
                     }
                     .navigationTitle("Configure Dosing Simulation")
                     .navigationBarTitleDisplayMode(.inline)
+                    .navigationDestination(isPresented: $navigateToDosingInput) {
+                        Run2DosingInputView()
+                    }
                     .navigationDestination(isPresented: $navigateToGraph) {
                         if let run2Result = run2Result, let days = Int(simulationDays) {
                             Run2GraphView(run2Result: run2Result, simulationDurationDays: days)
@@ -110,46 +114,38 @@ struct Run2View: View {
             print("Error: Invalid Run 1 parameters from AppStorage.")
             return
         }
-        
+
         guard !isSimulating else { return }
         isSimulating = true
-        print("\n--- DEBUGGING RUN 2 ---")
-            print("🛂 RUN 2 - Received Gender: \(gender), Height: \(heightString), Weight: \(weightString)")
-            
-            if let initialState = simulationData.run1Result?.q_final {
-                print("✅ RUN 2 - Received Initial State from Run 1: \(initialState)")
-            } else {
-                print("❌ RUN 2 ERROR: Did not receive an initial state from Run 1!")
-            }
-        
+
         Task {
-            let heightInMeters = (heightUnit == "cm") ? hVal / 100.0 : ((heightUnit == "in") ? hVal * 0.0254 : hVal)
-                let weightInKg = (weightUnit == "lb") ? wVal * 0.453592 : wVal
-                // --- Step 2: Pass the CORRECT variables to the simulator ---
-                let simulator = ThyroidSimulator(
-                    t4Secretion: t4Sec,
-                    t3Secretion: t3Sec,
-                    t4Absorption: t4Abs,
-                    t3Absorption: t3Abs,
-                    gender: gender,
-                    height: heightInMeters,  // Use the new, corrected value here
-                    weight: weightInKg,      // And here
-                    days: days,
-                    t3OralDoses: simulationData.t3oralinputs,
-                    t4OralDoses: simulationData.t4oralinputs,
-                    t3IVDoses: simulationData.t3ivinputs,
-                    t4IVDoses: simulationData.t4ivinputs,
-                    t3InfusionDoses: simulationData.t3infusioninputs,
-                    t4InfusionDoses: simulationData.t4infusioninputs,
-                    isInitialConditionsOn: isInitialConditionsOn
-                )
-            simulator.initialState = simulationData.run1Result?.q_final
+            let heightInMeters = (selectedHeightUnit == "cm") ? hVal / 100.0 : ((selectedHeightUnit == "in") ? hVal * 0.0254 : hVal)
+            let weightInKg = (selectedWeightUnit == "lb") ? wVal * 0.453592 : wVal
+
+            let simulator = ThyroidSimulator(
+                t4Secretion: t4Sec,
+                t3Secretion: t3Sec,
+                t4Absorption: t4Abs,
+                t3Absorption: t3Abs,
+                gender: selectedGender,
+                height: heightInMeters,
+                weight: weightInKg,
+                days: days,
+                t3OralDoses: simulationData.run2T3oralinputs,
+                t4OralDoses: simulationData.run2T4oralinputs,
+                t3IVDoses: simulationData.run2T3ivinputs,
+                t4IVDoses: simulationData.run2T4ivinputs,
+                t3InfusionDoses: simulationData.run2T3infusioninputs,
+                t4InfusionDoses: simulationData.run2T4infusioninputs,
+                isInitialConditionsOn: isInitialConditionsOn
+            )
             let result = simulator.runSimulation()
+
             await MainActor.run {
                 self.run2Result = result
-                // Store this result for future superimposition and for Run3
                 self.simulationData.previousRun2Results.append(result)
-                self.simulationData.run2Result = result
+                self.simulationData.run2Result = result   // <-- ADD THIS LINE
+
                 self.isSimulating = false
                 self.navigateToGraph = true
             }

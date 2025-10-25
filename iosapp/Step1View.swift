@@ -10,7 +10,7 @@ struct Step1View: View {
     @AppStorage("height") private var height: String = "170" // Default height
     @AppStorage("weight") private var weight: String = "70"   // Default weight
     @AppStorage("selectedGender") private var selectedGender: String = "FEMALE"
-    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
+    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = true
 
     // New AppStorage for units
     @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "cm"
@@ -47,64 +47,12 @@ struct Step1View: View {
                             .padding(.top)
                         
                     
-                        VStack(alignment: .leading, spacing: 6) {
-
-                            HStack(alignment: .top, spacing: 4) {
-                                // Bullet stays leading
-                                Text("•")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                    // Fixed width to separate from text
-
-                                // Centered text
-                                Text("Normal euthyroid defaults shown")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-                                    .frame(maxWidth: .infinity, alignment: .center) // Centers within available space
-                            } 
-
-                            HStack(alignment: .top, spacing: 4) {
-                                // Bullet stays leading
-                                Text("•")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                    // Fixed width to separate from text
-
-                                // Centered text
-                                Text("To simulate hypothyroidism or malabsorption conditions:")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-                                    .frame(maxWidth: .infinity, alignment: .center) // Centers within available space
-                            }
-
-                            HStack(alignment: .firstTextBaseline) {
-                                Text("• ")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                VStack(alignment: .center) {
-                                    Text("Change T3/T4 secretion rate SR (% of normal)")
-                                        .multilineTextAlignment(.center)
-                                        .font(.subheadline)
-                                        .foregroundColor(.white)
-                                }
-                                
-                            }
-                            HStack(alignment: .firstTextBaseline) {
-                                Text("• ")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                VStack(alignment: .center) {
-                                    Text("Modify T3/T4 oral absorption from 88%")
-                                        .font(.subheadline)
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.center)
-                                }
-                            }
-
+                        VStack(spacing: 6) {
+                            BulletRow(text: "Normal euthyroid defaults shown")
+                            BulletRow(text: "To simulate hypothyroidism or malabsorption conditions:")
+                            BulletRow(text: "Change T3/T4 secretion rate SR (% of normal)")
+                            BulletRow(text: "Modify T3/T4 oral absorption from 88%")
                         }
-
 
 
                         Group {
@@ -171,7 +119,9 @@ struct Step1View: View {
                                 .font(.footnote)
                                 .foregroundColor(.white)
                         }
+                        
                         .padding()
+                        
 
                         Text("*Note: SR is capped at 125% because model is not validated for hyperthyroid conditions.")
                             .font(.footnote)

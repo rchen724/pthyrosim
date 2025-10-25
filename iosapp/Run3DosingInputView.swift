@@ -47,39 +47,27 @@ struct Run3DosingInputView: View {
                         .font(.title2.bold())
                         .foregroundColor(.white)
 
-                    VStack(alignment: .center, spacing: 12) {
+                    // HOW TO DO IT… — now using BulletRow
+                    VStack(alignment: .center, spacing: 10) {
                         Text("HOW TO DO IT...")
                             .font(.headline)
                             .foregroundColor(.white)
 
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack(alignment: .firstTextBaseline) {
-                                Text("• ")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                VStack(alignment: .center){
-                                    Text("T3 and/or T4 input dosing can be chosen as oral;")
-                                    Text("OR intravenous (IV) bolus;")
-                                    Text("OR infusion doses.")
-                                }
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                                
-                            }
-
-                            HStack(alignment: .firstTextBaseline) {
-                                Text("• ")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                VStack(alignment: .center) {
-                                    Text("Click one or more icons to add as many inputs")
-                                    Text("and/or as many times as desired")
-                                }
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                            }
+                        BulletRows {
+                            Text("T3 and/or T4 input dosing can be chosen as oral;")
+                            Text("OR intravenous (IV) bolus;")
+                            Text("OR infusion doses.")
                         }
-                        .font(.footnote)
+
+                        BulletRows {
+                            Text("Click one or more icons to add as many inputs")
+                            Text("and/or as many times as desired")
+                        }
+
+                        BulletRows{
+                            Text("Click 'More' tab to review doses, simulate, or reset all options and restore defaults")
+                       
+                        }
                     }
 
                     HStack(alignment: .top, spacing: 40) {
@@ -277,8 +265,6 @@ struct Run3DosingInputView: View {
             }
             .coordinateSpace(name: "scroll")
             .background(Color.black.edgesIgnoringSafeArea(.all))
-            .navigationTitle("Run 3 Dosing Input")
-            .navigationBarTitleDisplayMode(.inline)
         }
         }
         .sheet(item: $activePopup) { popup in
@@ -337,6 +323,32 @@ fileprivate struct DoseDisplaySection<T: Identifiable, Content: View>: View {
                     .font(.title2.bold())
                     .foregroundColor(.white)
             }
+        }
+    }
+}
+
+fileprivate struct BulletRows<Content: View>: View {
+    private let content: Content
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            // Fixed-width bullet area to align all bullets vertically
+            Text("•")
+                .font(.subheadline)
+                .foregroundColor(.white)
+                .frame(width: 14, alignment: .leading)
+
+            // Center the provided content within the remaining width
+            VStack(alignment: .center, spacing: 2) {
+                content
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 }

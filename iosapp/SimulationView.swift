@@ -14,7 +14,7 @@ struct SimulationView: View {
     @AppStorage("selectedWeightUnit") private var weightUnit: String = "kg"
     @AppStorage("selectedGender") private var gender: String = "Female"
     @AppStorage("simulationDays") private var simulationDays: String = "5"
-    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = false
+    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = true
 
     @State private var simResult: ThyroidSimulationResult? = nil
     @State private var navigateToGraph: Bool = false

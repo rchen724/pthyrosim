@@ -47,7 +47,7 @@ struct IntroView: View {
         NavigationView {
             ZStack(alignment: .topTrailing) {
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 2) {
                         // Track scroll offset using GeometryReader for main page
                         GeometryReader { geo -> Color in
                             DispatchQueue.main.async {
@@ -152,7 +152,7 @@ struct IntroView: View {
                         }
 
                         Text("*Cruz Loya et al. doi: 10.3389/fendo.2022.888429")
-                            .font(.body)
+                            .font(.footnote)
                             .foregroundColor(.white)
                             .padding(.horizontal)
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -167,17 +167,17 @@ struct IntroView: View {
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("1. JJ DiStefano III - Director")
-                                Text("2. App Developers: Shruthi Sathya Narayanan, Rita Chen")
+                                Text("2. App Developers: Shruthi S Narayanan, Rita Chen")
                                 Text("3. Modelling and analysis by: Ben Chu, Marisio Cruz Loya, Karim Ghabra, Katarina Reid, Distefano Lab team")
                             }
-                            .font(.caption)
+                            .font(.footnote)
                             .foregroundColor(.white)
                             .multilineTextAlignment(.leading)
                             .padding(.horizontal)
                             
                             // Copyright below acknowledgements
-                            Text("© September 2025 by UCLA Biocybernetics Lab")
-                                .font(.caption)
+                            Text("© October 2025 by UCLA Biocybernetics Lab")
+                                .font(.callout)
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 8)

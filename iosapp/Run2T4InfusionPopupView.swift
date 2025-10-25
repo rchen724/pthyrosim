@@ -1,23 +1,22 @@
-//  Run3T3InfusionPopupView.swift
+//  Run2T4InfusionPopupView.swift
 //  iosapp
 //
-//  Created for Run3 dose input
+//  Created for Run2 dose input
 //
 
 import SwiftUI
 
-struct Run3T3InfusionPopupView: View {
+struct Run2T4InfusionPopupView: View {
     @Environment(\.dismiss) var dismiss
-    @AppStorage("selectedMainTab") private var selectedTab: Int = 0
     
-    @AppStorage("Run3T3InfusionDoseInput") private var T3InfusionDoseInput = ""
-    @AppStorage("Run3T3InfusionDoseStart") private var T3InfusionDoseStart = ""
-    @AppStorage("Run3T3InfusionDoseEnd") private var T3InfusionDoseEnd = ""
+    @AppStorage("Run2T4InfusionDoseInput") private var T4InfusionDoseInput = ""
+    @AppStorage("Run2T4InfusionDoseStart") private var T4InfusionDoseStart = ""
+    @AppStorage("Run2T4InfusionDoseEnd") private var T4InfusionDoseEnd = ""
     
     @State private var showErrorPopup = false
     @State private var errorMessage = ""
     
-    var onSave: (T3InfusionDose) -> Void
+    var onSave: (T4InfusionDose) -> Void
 
     var body: some View {
         ZStack{
@@ -27,10 +26,10 @@ struct Run3T3InfusionPopupView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack(alignment: .center, spacing: 10)
                             {
-                                Image("infusion1")
+                                Image("infusion2")
                                     .resizable()
                                     .frame(width: 30, height: 30)
-                                Text("T3-INFUSION DOSE (Run 3)")
+                                Text("T4-INFUSION DOSE (Run 2)")
                                     .font(.title3.bold())
                             }
                             VStack(alignment: .leading, spacing: 30) {
@@ -38,7 +37,7 @@ struct Run3T3InfusionPopupView: View {
                                     Text("Dose (µg)")
                                         .frame(width: 150, alignment: .leading)
                                     Spacer()
-                                    Step2InputField(title: "", value: $T3InfusionDoseInput)
+                                    Step2InputField(title: "", value: $T4InfusionDoseInput)
                                         .multilineTextAlignment(.leading)
                                         .frame(width: 100, alignment: .trailing)
                                 }
@@ -48,7 +47,7 @@ struct Run3T3InfusionPopupView: View {
                                         .frame(width: 150, alignment: .leading)
                                         .fixedSize(horizontal: false, vertical: true)
                                     Spacer()
-                                    Step2InputField(title: "", value: $T3InfusionDoseStart)
+                                    Step2InputField(title: "", value: $T4InfusionDoseStart)
                                         .multilineTextAlignment(.leading)
                                         .frame(width: 100, alignment: .trailing)
                                     
@@ -58,7 +57,7 @@ struct Run3T3InfusionPopupView: View {
                                         .frame(width: 150, alignment: .leading)
                                         .fixedSize(horizontal: false, vertical: true)
                                     Spacer()
-                                    Step2InputField(title: "", value: $T3InfusionDoseEnd)
+                                    Step2InputField(title: "", value: $T4InfusionDoseEnd)
                                         .multilineTextAlignment(.leading)
                                         .frame(width: 100, alignment: .trailing)
                                     
@@ -70,12 +69,9 @@ struct Run3T3InfusionPopupView: View {
                     }
                     .padding()
                 }
-                .onAppear {
-                    selectedTab = kMoreTabIndex
-                }
                 .scrollContentBackground(.hidden)
                 .background(Color.black.edgesIgnoringSafeArea(.all))
-                .navigationTitle("Add T3 Infusion Dose (Run 3)")
+                .navigationTitle("Add T4 Infusion Dose (Run 2)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
@@ -102,28 +98,28 @@ struct Run3T3InfusionPopupView: View {
     }
     
     private func saveDose() {
-        guard let doseInput = Double(T3InfusionDoseInput), doseInput > 0 else {
+        guard let doseInput = Double(T4InfusionDoseInput), doseInput > 0 else {
             errorMessage = "Please enter a valid dose amount."
             showErrorPopup = true
             return
         }
         
-        guard let doseStart = Double(T3InfusionDoseStart), doseStart >= 0 else {
+        guard let doseStart = Double(T4InfusionDoseStart), doseStart >= 0 else {
             errorMessage = "Please enter a valid start time."
             showErrorPopup = true
             return
         }
         
-        guard let doseEnd = Double(T3InfusionDoseEnd), doseEnd > doseStart else {
+        guard let doseEnd = Double(T4InfusionDoseEnd), doseEnd > doseStart else {
             errorMessage = "Please enter a valid end time greater than start time."
             showErrorPopup = true
             return
         }
         
-        let dose = T3InfusionDose(
-            T3InfusionDoseInput: Float(doseInput),
-            T3InfusionDoseStart: Float(doseStart),
-            T3InfusionDoseEnd: Float(doseEnd)
+        let dose = T4InfusionDose(
+            T4InfusionDoseInput: Float(doseInput),
+            T4InfusionDoseStart: Float(doseStart),
+            T4InfusionDoseEnd: Float(doseEnd)
         )
         
         onSave(dose)
