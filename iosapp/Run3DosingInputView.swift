@@ -261,12 +261,45 @@ struct Run3DosingInputView: View {
                         }
                     }
                 }
+                .background(
+                    GeometryReader { geo -> Color in
+                        DispatchQueue.main.async {
+                            self.contentHeight = geo.size.height
+                        }
+                        return Color.clear
+                    }
+                )
                 .padding()
             }
             .coordinateSpace(name: "scroll")
-            .background(Color.black.edgesIgnoringSafeArea(.all))
+            .background(
+                GeometryReader { geo -> Color in
+                    DispatchQueue.main.async {
+                        self.scrollViewHeight = geo.size.height
+                    }
+                    return Color.clear
+                }
+            )
+                // Custom scrollbar (only show if content taller than scrollView)
+                if contentHeight > scrollViewHeight {
+                    let maxScroll = max(contentHeight - scrollViewHeight, 1)
+                    let clampedOffset = min(max(scrollOffset, 0), maxScroll)
+                    let scrollProgress = clampedOffset / maxScroll
+                    let visibleRatio = scrollViewHeight / contentHeight
+                    let thumbHeight = max(scrollViewHeight * visibleRatio * 0.25, 30) // min height 30
+                    let thumbTop = scrollProgress * (scrollViewHeight - thumbHeight)
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.gray.opacity(0.8))
+                        .frame(width: 8, height: thumbHeight)
+                        .padding(.trailing, 4)
+                        .offset(y: thumbTop)
+                        .animation(.easeInOut(duration: 0.15), value: thumbTop)
+                }
+            }
+            
         }
-        }
+        .background(Color.black.ignoresSafeArea())
         .sheet(item: $activePopup) { popup in
             switch popup {
             case .Run3T3OralInputs:

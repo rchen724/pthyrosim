@@ -8,6 +8,11 @@ struct Run3View: View {
     @State private var isSimulating = false
     @State private var navigateToGraph = false
     @State private var navigateToDosingInput = false   // <-- new
+    
+    // Scroll tracking state for custom scrollbar
+    @State private var scrollOffset: CGFloat = 0
+    @State private var contentHeight: CGFloat = 1
+    @State private var scrollViewHeight: CGFloat = 1
 
     // AppStorage for Run 1 parameters (matching Step1View keys)
     @AppStorage("t4Secretion") private var t4Secretion = "100"

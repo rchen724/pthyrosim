@@ -20,7 +20,7 @@ struct Run2DosingInputView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .topTrailing) {
-                ScrollView(showsIndicators: false) {
+                ScrollViewWithScrollbar(showsIndicators: false) {
                     VStack(alignment: .center, spacing: 24) {
                         // (Optional) invisible tracker
                         GeometryReader { geo in

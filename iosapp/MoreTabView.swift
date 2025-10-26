@@ -35,7 +35,7 @@ struct MoreTabView: View {
                             .buttonStyle(.plain)
 
                             NavigationLink {
-                                Run3View(startAt: .dosing)
+                                Run3View(startAt: .simulate)
                             } label: {
                                 MenuCard(
                                     title: "Simulate Run 3",

@@ -1,8 +1,6 @@
 import SwiftUI
 import UIKit
 
-// Shared index for the custom TabBar
-// 0: Intro, 1: Input, 2: Run 1, 3: Dose 2, 4: Run 2, 5: More
 let kMoreTabIndex = 5
 
 enum RootTab: String {
@@ -11,12 +9,14 @@ enum RootTab: String {
 }
 
 struct MainView: View {
-    // Remove this if you don't use it elsewhere
-    @AppStorage("rootTabSelection") private var rootTabSelection: String = RootTab.run2.rawValue
+    @EnvironmentObject var simulationData: SimulationData
 
-    // ⬇️ Make the tab index shared via AppStorage
+    @AppStorage("rootTabSelection") private var rootTabSelection: String = RootTab.run2.rawValue
     @AppStorage("selectedMainTab") private var selectedTab: Int = 0
-    
+
+    // Run the reset only once per process (cold launch)
+    @State private var didResetThisLaunch = false
+
     private let tabs = [
         TabItem(title: "Intro",  icon: "info.circle.fill",             view: AnyView(IntroView())),
         TabItem(title: "Input",  icon: "slider.horizontal.3",          view: AnyView(Step1View())),
@@ -62,8 +62,12 @@ struct MainView: View {
         .background(Color.black.ignoresSafeArea(.all))
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
-            // Force Intro each time the root view appears
-            selectedTab = 0
+            // Perform the default reset once per cold launch
+            if !didResetThisLaunch {
+                AppDefaults.resetAll(simData: simulationData)
+                selectedTab = 0 // land on Intro
+                didResetThisLaunch = true
+            }
         }
     }
 }

@@ -70,9 +70,7 @@ struct Run2T3InfusionPopupView: View {
                     }
                     .padding()
                 }
-                .onAppear {
-                    selectedTab = kMoreTabIndex
-                }
+
                 .scrollContentBackground(.hidden)
                 .background(Color.black.edgesIgnoringSafeArea(.all))
                 .navigationTitle("Add T3 Infusion Dose (Run 2)")

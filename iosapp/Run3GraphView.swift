@@ -20,7 +20,7 @@ struct Run3GraphView: View {
 
     // --- CORRECTED VIEW FOR PDF EXPORT ---
     private var viewToRender: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 5) {
             Text("Run 3 Dosing Simulation Results")
                 .font(.title2).bold()
                 .frame(maxWidth: .infinity, alignment: .leading)
