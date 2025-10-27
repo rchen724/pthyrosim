@@ -18,8 +18,10 @@
    xcode-select -p
    # If this errors, point to your Xcode app:
    sudo xcode-select --switch /Applications/Xcode.app
+   
   ```
   
+
 ## Step 2: Clone GitHub Repository
 
 1. In Terminal, choose a working folder and clone:
