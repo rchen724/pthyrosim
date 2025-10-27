@@ -15,9 +15,9 @@
 3. (Optional) Install extra simulators: **Xcode → Settings → Platforms → +**.
 4. Verify CLI tools in Terminal:
    ```bash
-   xcode-select -p
-   # If this errors, point to your Xcode app:
-   sudo xcode-select --switch /Applications/Xcode.app
+    xcode-select -p
+    # If this errors, point to your Xcode app:
+    sudo xcode-select --switch /Applications/Xcode.app
   ```
 
 ## Step 2: Clone GitHub Repository
