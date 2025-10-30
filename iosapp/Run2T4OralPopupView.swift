@@ -71,9 +71,15 @@ struct Run2T4OralPopupView: View {
                                 
                                 if !T4SingleDose {
                                     HStack(alignment: .center) {
-                                        Text("Dose End Day or Time")
-                                            .frame(width: 150, alignment: .leading)
-                                            .fixedSize(horizontal: false, vertical: true)
+                                        VStack(alignment: .leading, spacing: 10) {
+                                            Text("Dose End Day or Time")
+                                                .frame(width: 150, alignment: .leading)
+                                            Text("e.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                                .frame(width: 150, alignment: .trailing)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
                                         Spacer()
                                         Step2InputField(title: "", value: $T4OralDoseEnd)
                                             .multilineTextAlignment(.leading)
@@ -83,9 +89,16 @@ struct Run2T4OralPopupView: View {
                                     }
                                     
                                     HStack(alignment: .center) {
-                                        Text("Dosing Interval (days)")
-                                            .frame(width: 150, alignment: .leading)
-                                            .fixedSize(horizontal: false, vertical: true)
+                                        VStack(alignment: .leading, spacing: 10) {
+                                            Text("Dosing Interval (days)")
+                                                .frame(width: 150, alignment: .leading)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                            Text("e.g. 1, if daily dosing, 0.5 if twice-daily dosing, etc")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                                .frame(width: 150, alignment: .trailing)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
                                         Spacer()
                                         Step2InputField(title: "", value: $T4OralDoseInterval)
                                             .multilineTextAlignment(.leading)
@@ -103,7 +116,7 @@ struct Run2T4OralPopupView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.black.edgesIgnoringSafeArea(.all))
-                .navigationTitle("Add T4 Oral Dose (Run 2)")
+                .navigationTitle("Add T4 Oral Dose (Run 3)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {

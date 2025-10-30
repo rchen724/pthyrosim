@@ -1,21 +1,11 @@
 import SwiftUI
-import UIKit
-
-let kMoreTabIndex = 5
-
-enum RootTab: String {
-    case run2
-    case more
-}
 
 struct MainView: View {
     @EnvironmentObject var simulationData: SimulationData
-
-    @AppStorage("rootTabSelection") private var rootTabSelection: String = RootTab.run2.rawValue
     @AppStorage("selectedMainTab") private var selectedTab: Int = 0
 
-    // Run the reset only once per process (cold launch)
-    @State private var didResetThisLaunch = false
+    // Token used to reset More tab's NavigationStack when re-tapping it
+    @AppStorage("moreTabResetToken") private var moreTabResetToken: String = ""
 
     private let tabs = [
         TabItem(title: "Intro",  icon: "info.circle.fill",             view: AnyView(IntroView())),
@@ -40,14 +30,22 @@ struct MainView: View {
                 HStack(spacing: 0) {
                     ForEach(0..<tabs.count, id: \.self) { index in
                         Button {
-                            selectedTab = index
+                            if selectedTab == index {
+                                // If re-tapping the already-selected "More" tab (index 5),
+                                // bump the token to force MoreTabView to pop to root.
+                                if index == 5 {
+                                    moreTabResetToken = UUID().uuidString
+                                }
+                            } else {
+                                selectedTab = index
+                            }
                         } label: {
                             VStack(spacing: 2) {
                                 Image(systemName: tabs[index].icon)
                                     .font(.system(size: 14))
                                     .foregroundColor(selectedTab == index ? .blue : .gray)
                                 Text(tabs[index].title)
-                                    .font(.system(size: 9))
+                                    .font(.system(size:  9))
                                     .foregroundColor(selectedTab == index ? .blue : .gray)
                             }
                             .frame(maxWidth: .infinity)
@@ -62,12 +60,10 @@ struct MainView: View {
         .background(Color.black.ignoresSafeArea(.all))
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
-            // Perform the default reset once per cold launch
-            if !didResetThisLaunch {
-                AppDefaults.resetAll(simData: simulationData)
-                selectedTab = 0 // land on Intro
-                didResetThisLaunch = true
-            }
+            // Optional: force Intro on launch
+            selectedTab = 0
+            LaunchResetManager.resetOnColdLaunch(simulationData: simulationData)
+
         }
     }
 }

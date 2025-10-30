@@ -103,6 +103,7 @@ struct SimulationView: View {
                         
                         simResult = result
                         simulationData.run1Result = result // Store result in shared data
+                         // ensure downstream is reset
                         if let finalState = result.q_final {
                                 print("✅ RUN 1 FINAL STATE (q_final): \(finalState)")
                             } else {

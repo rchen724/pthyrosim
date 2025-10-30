@@ -1,7 +1,9 @@
 import SwiftUI
 
-// MARK: - More Tab (with Reset)
 struct MoreTabView: View {
+    // ⬇️ add this line
+    @AppStorage("moreTabResetToken") private var moreTabResetToken: String = ""
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -46,7 +48,6 @@ struct MoreTabView: View {
                             }
                             .buttonStyle(.plain)
 
-                            // RESET card
                             ResetAppCardButton()
                                 .buttonStyle(.plain)
                         }
@@ -57,8 +58,13 @@ struct MoreTabView: View {
                 }
             }
         }
+        // ⬇️ this line is the magic: when the token changes, the stack resets to root
+        .id(moreTabResetToken)
     }
 }
+
+// …(keep your ResetAppCardButton, SimulationData extension, and MenuCard as-is)
+
 
 // MARK: - Reset Card Button (uses EnvironmentObject + AppStorage, self-contained)
 private struct ResetAppCardButton: View {
@@ -117,7 +123,7 @@ private struct ResetAppCardButton: View {
         selectedWeightUnit = "kg"
         selectedGender = "FEMALE"
         simulationDays = "5"
-        isInitialConditionsOn = false
+        isInitialConditionsOn = true
 
         // 2) Preserve that Run 1 has been completed at least once
         hasRunRun1Once = true

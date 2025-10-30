@@ -18,27 +18,26 @@ struct GraphSection: View {
     let secondaryColor: Color?
     let tertiaryValues: [(Double, Double)]?
     let tertiaryColor: Color?
+    /// Parent-provided ranges (kept as hints); we’ll expand them to fit all series.
     let yAxisRange: ClosedRange<Double>
     let xAxisRange: ClosedRange<Double>
-    let height: CGFloat        // NEW
-    let lineWidth: CGFloat     // NEW
+    let height: CGFloat
+    let lineWidth: CGFloat
     let chartHeight: CGFloat
     @Binding var showNormalRange: Bool
+
     @State private var currentXDomain: ClosedRange<Double>
     @State private var currentYDomain: ClosedRange<Double>
-    @State private var gestureStartDomainX: ClosedRange<Double>?
-    @State private var gestureStartDomainY: ClosedRange<Double>?
-    @State private var currentMagnification: CGFloat = 1.0
     @State private var selectedDataPoint: (time: Double, value: Double)? = nil
-    
+
     init(
         title: String, yLabel: String, xLabel: String,
         values: [(Double, Double)], color: Color,
         secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil,
         tertiaryValues: [(Double, Double)]? = nil,   tertiaryColor: Color? = nil,
         yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>,
-        height: CGFloat = 150,        // NEW default (smaller)
-        lineWidth: CGFloat = 1.2,     // NEW default (thinner)
+        height: CGFloat = 150,
+        lineWidth: CGFloat = 1.2,
         showNormalRange: Binding<Bool>,
         chartHeight: CGFloat = 250
     ) {
@@ -57,10 +56,48 @@ struct GraphSection: View {
         self.height = height
         self.lineWidth = lineWidth
         self.chartHeight = chartHeight
-        _currentYDomain = State(initialValue: yAxisRange)
-        _currentXDomain = State(initialValue: 0...max(5, xAxisRange.upperBound))
+
+        // ---- Auto-expand domains to include ALL series (prevents Run 1 clipping) ----
+        let combinedXMinMax = GraphSection.combinedMinMaxX(values: values, s: secondaryValues, t: tertiaryValues)
+        let combinedYMinMax = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues)
+
+        // Start X at 0 and extend to cover parent hint OR combined data (whichever is larger)
+        let initialXUpper = max(xAxisRange.upperBound, combinedXMinMax.max ?? xAxisRange.upperBound)
+        let initialXDomain: ClosedRange<Double> = 0...max(5, initialXUpper)
+
+        // Y domain: expand parent hint to include all series; keep 0 baseline if below.
+        let combinedYMin = min(yAxisRange.lowerBound, combinedYMinMax.min ?? yAxisRange.lowerBound)
+        let combinedYMax = max(yAxisRange.upperBound, combinedYMinMax.max ?? yAxisRange.upperBound)
+        let initialYLower = min(0, combinedYMin) // keep zero baseline visible
+        let initialYUpper = max(initialYLower + 1, combinedYMax) // avoid zero span
+        let initialYDomain: ClosedRange<Double> = initialYLower...initialYUpper
+
+        _currentXDomain = State(initialValue: initialXDomain)
+        _currentYDomain = State(initialValue: initialYDomain)
     }
-    
+
+    private static func combinedMinMaxX(
+        values: [(Double, Double)],
+        s: [(Double, Double)]?,
+        t: [(Double, Double)]?
+    ) -> (min: Double?, max: Double?) {
+        var xs: [Double] = values.map { $0.0 }
+        if let s = s { xs.append(contentsOf: s.map { $0.0 }) }
+        if let t = t { xs.append(contentsOf: t.map { $0.0 }) }
+        return (xs.min(), xs.max())
+    }
+
+    private static func combinedMinMaxY(
+        values: [(Double, Double)],
+        s: [(Double, Double)]?,
+        t: [(Double, Double)]?
+    ) -> (min: Double?, max: Double?) {
+        var ys: [Double] = values.map { $0.1 }
+        if let s = s { ys.append(contentsOf: s.map { $0.1 }) }
+        if let t = t { ys.append(contentsOf: t.map { $0.1 }) }
+        return (ys.min(), ys.max())
+    }
+
     private var chartData: [ChartDataPoint] {
         var data: [ChartDataPoint] = []
         for (x, y) in values { data.append(.init(x: x, y: y, series: "Current")) }
@@ -68,23 +105,29 @@ struct GraphSection: View {
         if let t = tertiaryValues  { for (x, y) in t { data.append(.init(x: x, y: y, series: "Tertiary")) } }
         return data
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title).font(.headline)
                 Spacer()
                 HStack(spacing: 6) {
-                    Button { self.zoom(by: 1.25) } label: { Image(systemName: "minus.magnifyingglass").font(.caption).foregroundColor(.secondary) }
-                        .buttonStyle(.borderless)
-                    Button { self.zoom(by: 0.8) } label: { Image(systemName: "plus.magnifyingglass").font(.caption).foregroundColor(.secondary) }
-                        .buttonStyle(.borderless)
-                    Button { self.resetZoomAndPan() } label: { Image(systemName: "arrow.uturn.backward.circle").font(.caption).foregroundColor(.secondary) }
-                        .buttonStyle(.borderless)
+                    Button { self.zoom(by: 1.25) } label: {
+                        Image(systemName: "minus.magnifyingglass").font(.caption).foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    Button { self.zoom(by: 0.8) } label: {
+                        Image(systemName: "plus.magnifyingglass").font(.caption).foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    Button { self.resetZoomAndPan() } label: {
+                        Image(systemName: "arrow.uturn.backward.circle").font(.caption).foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.borderless)
                 }
             }
             .padding(.horizontal, 8)
-            
+
             if values.isEmpty {
                 ContentUnavailableView("No Data", systemImage: "chart.bar.xaxis.ascending")
                     .frame(height: height)
@@ -100,13 +143,13 @@ struct GraphSection: View {
                             )
                             .foregroundStyle(Color.yellow.opacity(0.18))
                         }
-                        
+
                         ForEach(chartData) { p in
                             LineMark(x: .value(xLabel, p.x), y: .value(yLabel, p.y))
                                 .foregroundStyle(by: .value("Series", p.series))
                                 .lineStyle(by: .value("Series", p.series))
                         }
-                        
+
                         if let s = selectedDataPoint {
                             RuleMark(x: .value("Selected", s.time))
                                 .foregroundStyle(Color.gray.opacity(0.6))
@@ -126,21 +169,33 @@ struct GraphSection: View {
                                 }
                         }
                     }
-                    .chartForegroundStyleScale(["Current": color, "Secondary": (secondaryColor ?? .orange), "Tertiary": (tertiaryColor ?? .green)])
+                    .chartForegroundStyleScale([
+                        "Current": color,
+                        "Secondary": (secondaryColor ?? .red.opacity(0.8)),
+                        "Tertiary": (tertiaryColor ?? .purple.opacity(0.8))
+                    ])
                     .chartLineStyleScale([
                         "Current": StrokeStyle(lineWidth: lineWidth),
                         "Secondary": StrokeStyle(lineWidth: max(0.9, lineWidth - 0.3)),
                         "Tertiary": StrokeStyle(lineWidth: max(0.8, lineWidth - 0.4))
                     ])
+                    // Y: max 10 ticks
                     .chartYAxis {
-                        AxisMarks(position: .leading, values: generateAxisValues(for: currentYDomain, title: title)) {
+                        AxisMarks(
+                            position: .leading,
+                            values: tickValues(for: currentYDomain, maxTicks: 10, forceZeroBaseline: true)
+                        ) { _ in
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4, dash: [1, 1]))
                             AxisTick()
                             AxisValueLabel()
                         }
                     }
+                    // X: max 10 ticks
                     .chartXAxis {
-                        AxisMarks(position: .bottom, values: generateXAxisValues(for: currentXDomain)) {
+                        AxisMarks(
+                            position: .bottom,
+                            values: tickValues(for: currentXDomain, maxTicks: 10, forceZeroBaseline: false)
+                        ) { _ in
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4, dash: [1, 1]))
                             AxisTick()
                             AxisValueLabel()
@@ -167,56 +222,59 @@ struct GraphSection: View {
                 }
             }
         }
-        .onChange(of: yAxisRange) { resetZoomAndPan() }
+        // If the parent recomputes yAxisRange (e.g., after data update), re-expand to keep all lines visible
+        .onChange(of: yAxisRange) { _, _ in
+            let combinedY = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues)
+            let minY = min(yAxisRange.lowerBound, combinedY.min ?? yAxisRange.lowerBound)
+            let maxY = max(yAxisRange.upperBound, combinedY.max ?? yAxisRange.upperBound)
+            currentYDomain = min(0, minY)...max(min(0, minY) + 1, maxY)
+        }
     }
 
-    // --- HELPER FUNCTION TO GENERATE DETAILED AXIS VALUES ---
-    private func generateAxisValues(for domain: ClosedRange<Double>, title: String) -> [Double] {
-        let step: Double
-        // Define the step size for each hormone to match the target images
-        switch title {
-            case "T4":      step = 10
-            case "Free T4": step = 2
-            case "T3":      step = 0.2
-            case "Free T3": step = 0.5
-            case "TSH":     step = 0.5
-            default:        step = (domain.upperBound - domain.lowerBound) / 5.0
-        }
+    // MARK: - Tick helpers (max 10)
+    private func tickValues(for domain: ClosedRange<Double>, maxTicks: Int, forceZeroBaseline: Bool) -> [Double] {
+        var lo = domain.lowerBound
+        var hi = domain.upperBound
+        if forceZeroBaseline { lo = min(0, lo) }
 
-        guard step > 0 else { return [domain.lowerBound] }
-        
-        // Create an array of values from 0 up to the domain's upper bound
-        let values = Array(stride(from: 0, through: domain.upperBound, by: step))
-        return values
-    }
-    
-    // --- HELPER FUNCTION TO GENERATE X-AXIS VALUES ---
-    private func generateXAxisValues(for domain: ClosedRange<Double>) -> [Double] {
-        let range = domain.upperBound - domain.lowerBound
-        let step: Double
-        
-        // Determine appropriate step size based on the range
-        if range <= 1 {
-            step = 0.1
-        } else if range <= 5 {
-            step = 0.5
-        } else if range <= 10 {
-            step = 1.0
-        } else if range <= 30 {
-            step = 2.0
-        } else {
-            step = 5.0
+        let range = hi - lo
+        guard range > 0, maxTicks > 1 else { return [lo] }
+
+        let rawStep = range / Double(maxTicks - 1)
+        let step = niceStep(rawStep)
+        let niceLo = floor(lo / step) * step
+        let niceHi = ceil(hi / step) * step
+
+        var vals: [Double] = []
+        var v = niceLo
+        while v <= niceHi + step * 1e-6 {
+            vals.append(v)
+            v += step
         }
-        
-        // Create an array of values from the domain's lower bound to upper bound
-        let values = Array(stride(from: domain.lowerBound, through: domain.upperBound, by: step))
-        return values
+        if vals.count > maxTicks {
+            let strideBy = Int(ceil(Double(vals.count) / Double(maxTicks)))
+            vals = vals.enumerated().compactMap { idx, val in idx % strideBy == 0 ? val : nil }
+        }
+        return vals
     }
-    
+
+    private func niceStep(_ x: Double) -> Double {
+        guard x.isFinite, x > 0 else { return 1 }
+        let expv = floor(log10(x))
+        let f = x / pow(10, expv) // 1..10
+        let nf: Double
+        if f < 1.5 { nf = 1 }
+        else if f < 3 { nf = 2 }
+        else if f < 7 { nf = 5 }
+        else { nf = 10 }
+        return nf * pow(10, expv)
+    }
+
+    // MARK: - Overlay & zoom
     private func updateSelectedDataPoint(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
         let xPos = location.x - geometry[proxy.plotAreaFrame].origin.x
         guard let time: Double = proxy.value(atX: xPos) else { return }
-        
+
         var closestIndex: Int? = nil
         var minDistance: Double = .greatestFiniteMagnitude
         for i in values.indices {
@@ -228,18 +286,28 @@ struct GraphSection: View {
         }
         if let index = closestIndex { selectedDataPoint = values[index] }
     }
-    
+
     private func zoom(by factor: CGFloat) {
         currentXDomain = currentXDomain.zoomed(by: currentXDomain.span * factor)
         currentYDomain = currentYDomain.zoomed(by: currentYDomain.span * factor)
     }
-    
+
     private func resetZoomAndPan() {
-        currentXDomain = 0...max(5, xAxisRange.upperBound)
-        currentYDomain = yAxisRange
+        // Rebuild union domains on reset as well
+        let combinedX = GraphSection.combinedMinMaxX(values: values, s: secondaryValues, t: tertiaryValues)
+        let combinedY = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues)
+
+        let xUpper = max(xAxisRange.upperBound, combinedX.max ?? xAxisRange.upperBound)
+        currentXDomain = 0...max(5, xUpper)
+
+        let minY = min(yAxisRange.lowerBound, combinedY.min ?? yAxisRange.lowerBound)
+        let maxY = max(yAxisRange.upperBound, combinedY.max ?? yAxisRange.upperBound)
+        currentYDomain = min(0, minY)...max(min(0, minY) + 1, maxY)
+
         selectedDataPoint = nil
     }
-    
+
+    // MARK: - Normal ranges
     func normalRange(for hormone: String) -> ClosedRange<Double>? {
         switch hormone {
         case "T4": return 50.0...120.0

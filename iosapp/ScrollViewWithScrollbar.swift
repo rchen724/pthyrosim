@@ -10,13 +10,13 @@ struct ScrollViewWithScrollbar<Content: View>: View {
     @State private var scrollViewHeight: CGFloat = 1
 
     // Tweakables
-    private let thumbWidth: CGFloat = 6        // was 8
+    private let thumbWidth: CGFloat = 8
     private let thumbMinHeight: CGFloat = 8    // was 10
     private let thumbCorner: CGFloat = 3
-    private let thumbOpacity: Double = 0.72    // slightly lighter
-    private let sidePadding: CGFloat = 3       // was 4
+    private let thumbOpacity: Double = 0.8    // slightly lighter
+    private let sidePadding: CGFloat = 4      // was 4
     private let animationDuration: Double = 0.5 // was 0.15 (slower)
-    private let visibleScale: CGFloat = 0.22   // was 0.25 (slightly smaller thumb)
+    private let visibleScale: CGFloat = 0.15   // was 0.25 (slightly smaller thumb)
 
     init(showsIndicators: Bool = false, @ViewBuilder content: @escaping () -> Content) {
         self.showsIndicators = showsIndicators

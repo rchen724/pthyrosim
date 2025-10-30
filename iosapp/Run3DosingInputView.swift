@@ -32,7 +32,7 @@ struct Run3DosingInputView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .topTrailing) {
-            ScrollView(showsIndicators: false) {
+            ScrollViewWithScrollbar(showsIndicators: false) {
                 VStack(alignment: .center, spacing: 24) {
                     // Invisible GeometryReader to track scroll offset
                     GeometryReader { geo in
@@ -261,41 +261,12 @@ struct Run3DosingInputView: View {
                         }
                     }
                 }
-                .background(
-                    GeometryReader { geo -> Color in
-                        DispatchQueue.main.async {
-                            self.contentHeight = geo.size.height
-                        }
-                        return Color.clear
-                    }
-                )
+
                 .padding()
             }
             .coordinateSpace(name: "scroll")
-            .background(
-                GeometryReader { geo -> Color in
-                    DispatchQueue.main.async {
-                        self.scrollViewHeight = geo.size.height
-                    }
-                    return Color.clear
-                }
-            )
-                // Custom scrollbar (only show if content taller than scrollView)
-                if contentHeight > scrollViewHeight {
-                    let maxScroll = max(contentHeight - scrollViewHeight, 1)
-                    let clampedOffset = min(max(scrollOffset, 0), maxScroll)
-                    let scrollProgress = clampedOffset / maxScroll
-                    let visibleRatio = scrollViewHeight / contentHeight
-                    let thumbHeight = max(scrollViewHeight * visibleRatio * 0.25, 30) // min height 30
-                    let thumbTop = scrollProgress * (scrollViewHeight - thumbHeight)
 
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.gray.opacity(0.8))
-                        .frame(width: 8, height: thumbHeight)
-                        .padding(.trailing, 4)
-                        .offset(y: thumbTop)
-                        .animation(.easeInOut(duration: 0.15), value: thumbTop)
-                }
+
             }
             
         }

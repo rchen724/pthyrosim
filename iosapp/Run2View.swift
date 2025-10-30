@@ -1,11 +1,12 @@
 import SwiftUI
+
 struct Run2View: View {
     @EnvironmentObject var simulationData: SimulationData
     
     @State private var run2Result: ThyroidSimulationResult?
     @State private var isSimulating: Bool = false
     @State private var navigateToGraph: Bool = false
-    @State private var navigateToDosingInput = false   // <-- new
+    @State private var navigateToDosingInput = false
     
     // Using AppStorage properties from SimulationView
     @AppStorage("t4Secretion") private var t4Secretion: String = "100"
@@ -18,35 +19,28 @@ struct Run2View: View {
     @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg"
     @AppStorage("selectedGender") private var selectedGender: String = "Female"
     @AppStorage("simulationDays") private var simulationDays: String = "5"
+    // NOTE: We'll ignore this for Run 2 and always continue from Run 1:
     @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = true
-    
+
     private var heightInMeters: Double? {
-          // Use the correct variable name: heightString
-          guard let heightValue = Double(heightString) else { return nil }
-          
-          // Compare against the correct string-based unit
-          if selectedHeightUnit == "cm" {
-              return heightValue / 100.0
-          } else if selectedHeightUnit  == "in" {
-              return heightValue * 0.0254
-          } else { // Assumes meters by default
-              return heightValue
-          }
-      }
-      private var weightInKg: Double? {
-          // Use the correct variable name: weightString
-          guard let weightValue = Double(weightString) else { return nil }
-          
-          // Compare against the correct string-based unit
-          if selectedWeightUnit == "lb" {
-              return weightValue * 0.453592
-          } else { // Assumes kg by default
-              return weightValue
-          }
-      }
-    
-    
-    
+        guard let heightValue = Double(heightString) else { return nil }
+        if selectedHeightUnit == "cm" {
+            return heightValue / 100.0
+        } else if selectedHeightUnit == "in" {
+            return heightValue * 0.0254
+        } else { // meters
+            return heightValue
+        }
+    }
+    private var weightInKg: Double? {
+        guard let weightValue = Double(weightString) else { return nil }
+        if selectedWeightUnit == "lb" {
+            return weightValue * 0.453592
+        } else { // kg
+            return weightValue
+        }
+    }
+
     var body: some View {
         NavigationStack {
             if simulationData.run1Result != nil {
@@ -63,6 +57,7 @@ struct Run2View: View {
                             DoseDisplayView(doses: simulationData.run2T3ivinputs) { Text(format(dose: $0)) }
                             DoseDisplayView(doses: simulationData.run2T3infusioninputs) { Text(format(dose: $0)) }
                         }
+                        
                         Button(action: { runSimulationAndNavigate() }) {
                             HStack {
                                 Spacer()
@@ -90,10 +85,14 @@ struct Run2View: View {
                     }
                 }
                 .onAppear {
-                    // Reset previous run 2 results when view appears
-                    if self.run2Result != nil {
-                        self.run2Result = nil
-                    }
+                    // Clear any transient local result on appear
+                    if self.run2Result != nil { self.run2Result = nil }
+                }
+                // If Run 1 changes after we’ve run Run 2, invalidate Run 2 so user must re-simulate
+                .onChange(of: simulationData.run1Result?.q_final?.count ?? -1) { _, _ in
+                    self.run2Result = nil
+                    self.navigateToGraph = false
+                    simulationData.run2Result = nil
                 }
             } else {
                 VStack {
@@ -106,6 +105,7 @@ struct Run2View: View {
             }
         }
     }
+
     private func runSimulationAndNavigate() {
         guard let t4Sec = Double(t4Secretion), let t3Sec = Double(t3Secretion),
               let t4Abs = Double(t4Absorption), let t3Abs = Double(t3Absorption),
@@ -121,13 +121,14 @@ struct Run2View: View {
         Task {
             let heightInMeters = (selectedHeightUnit == "cm") ? hVal / 100.0 : ((selectedHeightUnit == "in") ? hVal * 0.0254 : hVal)
             let weightInKg = (selectedWeightUnit == "lb") ? wVal * 0.453592 : wVal
+            let normalizedGender = selectedGender.uppercased() // "FEMALE" / "MALE"
 
-            let simulator = ThyroidSimulator(
+            var simulator = ThyroidSimulator(
                 t4Secretion: t4Sec,
                 t3Secretion: t3Sec,
                 t4Absorption: t4Abs,
                 t3Absorption: t3Abs,
-                gender: selectedGender,
+                gender: normalizedGender,
                 height: heightInMeters,
                 weight: weightInKg,
                 days: days,
@@ -137,17 +138,24 @@ struct Run2View: View {
                 t4IVDoses: simulationData.run2T4ivinputs,
                 t3InfusionDoses: simulationData.run2T3infusioninputs,
                 t4InfusionDoses: simulationData.run2T4infusioninputs,
-                isInitialConditionsOn: isInitialConditionsOn
+                // ✅ For Run 2 we DO NOT recalc IC — continue from Run 1:
+                isInitialConditionsOn: false
             )
+
+            // ✅ Continue from Run 1’s final state
+            simulator.initialState = simulationData.run1Result?.q_final
+
             let result = simulator.runSimulation()
 
             await MainActor.run {
                 self.run2Result = result
-                self.simulationData.previousRun2Results.append(result)
-                self.simulationData.run2Result = result   // <-- ADD THIS LINE
-
                 self.isSimulating = false
                 self.navigateToGraph = true
+
+                // Keep a copy in the shared model (used by Run 3 etc.)
+                self.simulationData.run2Result = result
+                // (Optional) If you keep history:
+                self.simulationData.previousRun2Results.append(result)
             }
         }
     }
@@ -188,6 +196,7 @@ struct Run2View: View {
         return "Infusion T3: \(formattedDose)µg from day \(formattedStart) to \(formattedEnd)"
     }
 }
+
 // --- Helper view for simply displaying lists of doses ---
 fileprivate struct DoseDisplayView<T: Identifiable, Content: View>: View {
     let doses: [T]
@@ -202,4 +211,3 @@ fileprivate struct DoseDisplayView<T: Identifiable, Content: View>: View {
         }
     }
 }
-
