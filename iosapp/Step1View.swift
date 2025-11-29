@@ -131,10 +131,7 @@ struct Step1View: View {
                                     .foregroundColor(.white)
                             }
                             .toggleStyle(SwitchToggleStyle(tint: .red))
-                            Text("When the switch is ON, SR initial conditions")
-                                .font(.footnote)
-                                .foregroundColor(.white)
-                            Text("Recalculated to match new inputs.")
+                            Text("When this switch is ON, SR initial conditions (IC) are recalculated to match new inputs. When this switch is OFF, initial conditions are set to euthyroid.")
                                 .font(.footnote)
                                 .foregroundColor(.white)
                         }
