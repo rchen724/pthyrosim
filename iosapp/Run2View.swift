@@ -129,11 +129,21 @@ struct Run2View: View {
         guard let t4Sec = Double(t4Secretion), let t3Sec = Double(t3Secretion),
               let t4Abs = Double(t4Absorption), let t3Abs = Double(t3Absorption),
               let hVal = Double(heightString), let wVal = Double(weightString),
-              let days = Int(simulationDays) else {
+              var days = Int(simulationDays) else { // Changed to var
             print("Error: Invalid Run 1 parameters from AppStorage.")
             return
         }
 
+        // Calculate 3x the end of the last dosing
+        let maxDosingEnd = calculateMaxDosingEndDay()
+        if maxDosingEnd > 0 { // Only adjust if there are actual doses
+            let newMaxSimulationDays = Int(maxDosingEnd * 3)
+            if newMaxSimulationDays > days {
+                days = newMaxSimulationDays // Update local 'days' variable
+                self.simulationDays = String(newMaxSimulationDays) // Update @AppStorage
+            }
+        }
+        
         guard !isSimulating else { return }
         isSimulating = true
 
@@ -170,6 +180,46 @@ struct Run2View: View {
     private func format(dose: T3OralDose) -> String { "Oral T3: \(String(format: "%.1f", dose.T3OralDoseInput))µg" + (dose.T3SingleDose ? " at day \(String(format: "%.1f", dose.T3OralDoseStart))" : " every \(String(format: "%.1f", dose.T3OralDoseInterval)) days") }
     private func format(dose: T3IVDose) -> String { "IV T3: \(String(format: "%.1f", dose.T3IVDoseInput))µg at day \(String(format: "%.1f", dose.T3IVDoseStart))" }
     private func format(dose: T3InfusionDose) -> String { "Infusion T3: \(String(format: "%.1f", dose.T3InfusionDoseInput))µg from day \(String(format: "%.1f", dose.T3InfusionDoseStart)) to \(String(format: "%.1f", dose.T3InfusionDoseEnd))" }
+
+    private func calculateMaxDosingEndDay() -> Double {
+        var maxEndDay: Double = 0.0
+
+        // T3 Oral Doses
+        for dose in simulationData.run2T3oralinputs {
+            if dose.T3SingleDose {
+                maxEndDay = max(maxEndDay, Double(dose.T3OralDoseStart))
+            } else {
+                maxEndDay = max(maxEndDay, Double(dose.T3OralDoseEnd))
+            }
+        }
+        // T3 IV Doses
+        for dose in simulationData.run2T3ivinputs {
+            maxEndDay = max(maxEndDay, Double(dose.T3IVDoseStart))
+        }
+        // T3 Infusion Doses
+        for dose in simulationData.run2T3infusioninputs {
+            maxEndDay = max(maxEndDay, Double(dose.T3InfusionDoseEnd))
+        }
+
+        // T4 Oral Doses
+        for dose in simulationData.run2T4oralinputs {
+            if dose.T4SingleDose {
+                maxEndDay = max(maxEndDay, Double(dose.T4OralDoseStart))
+            } else {
+                maxEndDay = max(maxEndDay, Double(dose.T4OralDoseEnd))
+            }
+        }
+        // T4 IV Doses
+        for dose in simulationData.run2T4ivinputs {
+            maxEndDay = max(maxEndDay, Double(dose.T4IVDoseStart))
+        }
+        // T4 Infusion Doses
+        for dose in simulationData.run2T4infusioninputs {
+            maxEndDay = max(maxEndDay, Double(dose.T4InfusionDoseEnd))
+        }
+
+        return maxEndDay
+    }
 }
 
 fileprivate struct DoseDisplaySection<T: Identifiable, Content: View>: View {

@@ -39,7 +39,7 @@ struct GraphSection: View {
         tertiaryValues: [(Double, Double)]? = nil,   tertiaryColor: Color? = nil,
         quaternaryValues: [(Double, Double)]? = nil, quaternaryColor: Color? = nil,
         yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>,
-        height: CGFloat = 150,
+        height: CGFloat = 120,
         lineWidth: CGFloat = 1.2,
         showNormalRange: Binding<Bool>,
         chartHeight: CGFloat = 250

@@ -34,8 +34,9 @@ struct Run2GraphView: View {
 
 
     private var viewToRender: some View {
+        
         VStack(spacing: 5) {
-            Text("Run 2 Dosing Simulation Results")
+            Text("Run 2 Dosing")
                 .font(.title2).bold()
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -213,6 +214,7 @@ struct Run2GraphView: View {
                 )
             }
             .padding()
+            .padding(.bottom, 20)
         }
         .navigationTitle("Run 2 Dosing Simulation")
         .navigationBarTitleDisplayMode(.inline)
