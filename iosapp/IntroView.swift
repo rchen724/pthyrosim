@@ -47,8 +47,9 @@ struct IntroView: View {
                     
                     HStack(spacing: 5) {
                         Text("iOS Version 1.0")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
                         
                         Button(action: { showDisclaimer = true }) {
                             Image(systemName: "info.circle")
@@ -63,14 +64,15 @@ struct IntroView: View {
                 Image("thyrosim")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 150)
+                    .frame(maxHeight: 225)
                     .padding(.horizontal, 40)
                     .padding(.vertical, 10)
 
                 // Description Button
                 Button(action: { showDescription = true }) {
-                    Text("About p-THYROSIM")
-                        .font(.subheadline)
+                    Text("Read About p-THYROSIM  FIRST!")
+                        .font(.headline)
+                        .fontWeight(.semibold)
                         .padding(10)
                         .frame(maxWidth: .infinity)
                         .background(Color.blue)
@@ -81,15 +83,19 @@ struct IntroView: View {
 
                 // References
                 VStack(spacing: 4) {
-                    Text("References:")
+                    Text("References")
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
                     
-                    Text("*Cruz Loya et al. doi: 10.3389/fendo.2022.888429")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
+                    Text("1. Cruz Loya et al. doi: 10.3389/fendo.2022.888429")
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                    Text("2. JJ DiStefano III et al. Personalized p-THYROSIM model...")
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
                 }
                 .padding(5)
 
@@ -105,21 +111,21 @@ struct IntroView: View {
                         Text("**App Developers:** Rita Chen, Shruthi S Narayanan, Ashwin Joshi")
                         Text("**Modeling & Analysis:** Ben Chu, Mauricio Cruz Loya, Karim Ghabra, Katarina Reid, Distefano Lab team")
                     }
-                    .font(.caption)
+                    //NOTE: LOOK AT SPACING AND WRAP AROUND FOR PEOPLE AND REF
+                    .font(.subheadline)
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                 }
                 .padding(10)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(10)
                 .padding(.horizontal)
 
                 Spacer()
 
                 // Copyright
-                Text("© December 2025 by UCLA Biocybernetics Lab")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+                Text("© December 2025 by UCLA Biocybernetics Laboratory")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
                     .padding(.bottom, 10)
                 
             }
@@ -161,7 +167,7 @@ struct DescriptionPopupView: View {
             }) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.largeTitle)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
             }
             .padding()
         }

@@ -47,8 +47,8 @@ struct Step1View: View {
                         
                         VStack(spacing: 6) {
                             BulletRow(text: "Normal euthyroid defaults shown")
-                            BulletRow(text: "To simulate hypothyroidism or malabsorption conditions:")
-                            BulletRow(text: "Change T3/T4 secretion rate SR (% of normal)")
+                            BulletRow(text: "To simulate hypothyroidism or malabsorption \n     conditions:")
+                            BulletRow(text: "Change T3/T4 secretion rate SR3/4 \n   (% of normal)")
                             BulletRow(text: "Modify T3/T4 oral absorption from 88%")
                         }
 
@@ -131,13 +131,13 @@ struct Step1View: View {
                                     .foregroundColor(.white)
                             }
                             .toggleStyle(SwitchToggleStyle(tint: .red))
-                            Text("When this switch is ON, SR initial conditions (IC) are recalculated to match new inputs. When this switch is OFF, initial conditions are set to euthyroid.")
-                                .font(.footnote)
+                            Text("When this switch is ON, SR3 & SR4 initial conditions (IC) are recalculated to match new inputs. When this switch is OFF, initial conditions are set to euthyroid.")
+                                .font(.subheadline)
                                 .foregroundColor(.white)
                         }
                         .padding()
 
-                        Text("*Note: SR is capped at 125% because model is not validated for hyperthyroid conditions.")
+                        Text("*Note: SR3 & SR4 change together & are capped at 125% because model is not validated for hyperthyroid conditions. ")
                             .font(.footnote)
                             .foregroundColor(.white)
                             .padding(.bottom, 30)

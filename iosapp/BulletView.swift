@@ -20,8 +20,8 @@ struct BulletRow: View {
             Text(text)
                 .font(.subheadline)
                 .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
