@@ -1,5 +1,5 @@
 import SwiftUI
-
+/**
 struct MoreTabView: View {
     // ⬇️ add this line
     @AppStorage("moreTabResetToken") private var moreTabResetToken: String = ""
@@ -25,7 +25,6 @@ struct MoreTabView: View {
                         // Menu cards
                         VStack(spacing: 14) {
                             NavigationLink {
-                                Run3DosingInputView()
                             } label: {
                                 MenuCard(
                                     title: "Add Dosing (Run 3)",
@@ -218,3 +217,4 @@ private struct MenuCard: View {
         )
     }
 }
+*/

@@ -31,6 +31,15 @@ class SimulationData: ObservableObject {
     @Published var run3T4ivinputs: [T4IVDose] = []
     @Published var run3T4infusioninputs: [T4InfusionDose] = []
     
+    // Run4-specific dose arrays
+    @Published var run4T3oralinputs: [T3OralDose] = []
+    @Published var run4T3ivinputs: [T3IVDose] = []
+    @Published var run4T3infusioninputs: [T3InfusionDose] = []
+    
+    @Published var run4T4oralinputs: [T4OralDose] = []
+    @Published var run4T4ivinputs: [T4IVDose] = []
+    @Published var run4T4infusioninputs: [T4InfusionDose] = []
+    
     // To store the result of the first simulation (euthyroid)
     @Published var run1Result: ThyroidSimulationResult? = nil
     
@@ -42,8 +51,17 @@ class SimulationData: ObservableObject {
     
     // To store previous Run3 results for superimposition
     @Published var previousRun3Results: [ThyroidSimulationResult] = []
+
+    // To store the result of Run3 for Run4 initial state
+    @Published var run3Result: ThyroidSimulationResult? = nil
+    
+    // To store previous Run4 results for superimposition
+    @Published var previousRun4Results: [ThyroidSimulationResult] = []
+    
+    @Published var run4Result: ThyroidSimulationResult? = nil
     
     // Additional properties that might be referenced elsewhere
     @Published var currentRun2Result: ThyroidSimulationResult? = nil
     @Published var currentRun3Result: ThyroidSimulationResult? = nil
+    @Published var currentRun4Result: ThyroidSimulationResult? = nil
 }

@@ -1,19 +1,18 @@
 import SwiftUI
 
-enum Run3StartScreen { case dosing, simulate }
-
 struct Run3View: View {
     @EnvironmentObject var simulationData: SimulationData
-    @State private var run3Result: ThyroidSimulationResult? = nil
-    @State private var isSimulating = false
-    @State private var navigateToGraph = false
-    @State private var navigateToDosingInput = false   // <-- new
+    @State private var activePopup: ActivePopup? = nil
     
-    // Scroll tracking state for custom scrollbar
+    // Scroll tracking state for custom scrollbar (kept for future use)
     @State private var scrollOffset: CGFloat = 0
     @State private var contentHeight: CGFloat = 1
     @State private var scrollViewHeight: CGFloat = 1
-
+    
+    @State private var run3Result: ThyroidSimulationResult? = nil
+    @State private var isSimulating = false
+    @State private var navigateToGraph = false
+    
     // AppStorage for Run 1 parameters (matching Step1View keys)
     @AppStorage("t4Secretion") private var t4Secretion = "100"
     @AppStorage("t3Secretion") private var t3Secretion = "100"
@@ -27,96 +26,81 @@ struct Run3View: View {
     @AppStorage("simulationDays") private var simulationDays = "5"
     @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn = true
 
-    // Where should Run3 open?
-    private let startAt: Run3StartScreen
-    init(startAt: Run3StartScreen = .simulate) {
-        self.startAt = startAt
-    }
-
-    private var heightInMeters: Double? {
-        guard let heightValue = Double(height) else { return nil }
-        if selectedHeightUnit == "cm" {
-            return heightValue / 100.0
-        } else if selectedHeightUnit == "in" {
-            return heightValue * 0.0254
-        } else {
-            return heightValue
-        }
-    }
-
-    private var weightInKg: Double? {
-        guard let weightValue = Double(weight) else { return nil }
-        if selectedWeightUnit == "lb" {
-            return weightValue * 0.453592
-        } else {
-            return weightValue
-        }
-    }
+    // Enumerated input arrays for Run3
+    var enumeratedRun3T3Oral: [(Int, T3OralDose)] { Array(simulationData.run3T3oralinputs.enumerated()) }
+    var enumeratedRun3T3IV: [(Int, T3IVDose)] { Array(simulationData.run3T3ivinputs.enumerated()) }
+    var enumeratedRun3T3Infusion: [(Int, T3InfusionDose)] { Array(simulationData.run3T3infusioninputs.enumerated()) }
+    var enumeratedRun3T4Oral: [(Int, T4OralDose)] { Array(simulationData.run3T4oralinputs.enumerated()) }
+    var enumeratedRun3T4IV: [(Int, T4IVDose)] { Array(simulationData.run3T4ivinputs.enumerated()) }
+    var enumeratedRun3T4Infusion: [(Int, T4InfusionDose)] { Array(simulationData.run3T4infusioninputs.enumerated()) }
 
     var body: some View {
         NavigationStack {
             if simulationData.run2Result != nil {
-                ZStack {
-                    Form {
-                        Section(header: Text("T4 Doses for Run 3 Dosing Simulation")) {
-                            DoseDisplayView(doses: simulationData.run3T4oralinputs) { Text(format(dose: $0)) }
-                            DoseDisplayView(doses: simulationData.run3T4ivinputs) { Text(format(dose: $0)) }
-                            DoseDisplayView(doses: simulationData.run3T4infusioninputs) { Text(format(dose: $0)) }
-                        }
+                ZStack(alignment: .topTrailing) {
+                    ScrollViewWithScrollbar(showsIndicators: false) {
+                        VStack(alignment: .center, spacing: 24) {
+                            Text("Run 3 Dosing Input")
+                                .font(.title2.bold())
+                                .foregroundColor(.white)
 
-                        Section(header: Text("T3 Doses for Run 3 Dosing Simulation")) {
-                            DoseDisplayView(doses: simulationData.run3T3oralinputs) { Text(format(dose: $0)) }
-                            DoseDisplayView(doses: simulationData.run3T3ivinputs) { Text(format(dose: $0)) }
-                            DoseDisplayView(doses: simulationData.run3T3infusioninputs) { Text(format(dose: $0)) }
-                        }
-
-                        Section(header: Text("Configure Doses")) {
-                            HStack {
-                                Image(systemName: "info.circle.fill")
-                                    .foregroundColor(.blue)
-                                Text("Go to 'More' tab to add/edit doses")
-                                    .foregroundColor(.primary)
-                                Spacer()
-                            }
-                        }
-
-                        Button(action: { runSimulationAndNavigate() }) {
-                            HStack {
-                                Spacer()
-                                if isSimulating {
-                                    ProgressView()
-                                } else {
-                                    Text("Simulate Run 3")
-                                        .fontWeight(.bold)
+                            HStack(alignment: .top, spacing: 40) {
+                                VStack(alignment: .center, spacing: 16) {
+                                    Text("T3 Input:")
+                                        .font(.title3.bold())
+                                        .foregroundColor(.white)
+                                    VStack(spacing: 12) {
+                                        Button { activePopup = .T3OralInputs } label: { VStack { Image("pill1"); Text("Oral Dose").font(.headline).foregroundColor(.white) } }
+                                        Button { activePopup = .T3IVInputs } label: { VStack { Image("syringe1"); Text("IV Bolus Dose").font(.headline).foregroundColor(.white) } }
+                                        Button { activePopup = .T3InfusionInputs } label: { VStack { Image("infusion1"); Text("Infusion Dose").font(.headline).foregroundColor(.white) } }
+                                    }
                                 }
-                                Spacer()
+
+                                VStack(alignment: .center, spacing: 16) {
+                                    Text("T4 Input:")
+                                        .font(.title3.bold())
+                                        .foregroundColor(.white)
+                                    VStack(spacing: 12) {
+                                        Button { activePopup = .T4OralInputs } label: { VStack { Image("pill2"); Text("Oral Dose").font(.headline).foregroundColor(.white) } }
+                                        Button { activePopup = .T4IVInputs } label: { VStack { Image("syringe2"); Text("IV Bolus Dose").font(.headline).foregroundColor(.white) } }
+                                        Button { activePopup = .T4InfusionInputs } label: { VStack { Image("infusion2"); Text("Infusion Dose").font(.headline).foregroundColor(.white) } }
+                                    }
+                                }
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+
+                            if !simulationData.run3T3oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3Oral, title: "T3-ORAL DOSE (Run 3)", imageName: "pill1", onDelete: { simulationData.run3T3oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3OralDoseInput), ("Start Day", d.T3OralDoseStart)], conditionalDetails: !d.T3SingleDose ? [("End Day", d.T3OralDoseEnd), ("Interval (days)", d.T3OralDoseInterval)] : nil, onDelete: del) } }
+                            if !simulationData.run3T3ivinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3IV, title: "T3-IV DOSE (Run 3)", imageName: "syringe1", onDelete: { simulationData.run3T3ivinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3IVDoseInput), ("Start Day", d.T3IVDoseStart)], onDelete: del) } }
+                            if !simulationData.run3T3infusioninputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3Infusion, title: "T3-INFUSION DOSE (Run 3)", imageName: "infusion1", onDelete: { simulationData.run3T3infusioninputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3InfusionDoseInput), ("Start Day", d.T3InfusionDoseStart), ("End Day", d.T3InfusionDoseEnd)], onDelete: del) } }
+                            if !simulationData.run3T4oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4Oral, title: "T4-ORAL DOSE (Run 3)", imageName: "pill2", onDelete: { simulationData.run3T4oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4OralDoseInput), ("Start Day", d.T4OralDoseStart)], conditionalDetails: !d.T4SingleDose ? [("End Day", d.T4OralDoseEnd), ("Interval (days)", d.T4OralDoseInterval)] : nil, onDelete: del) } }
+                            if !simulationData.run3T4ivinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4IV, title: "T4-IV DOSE (Run 3)", imageName: "syringe2", onDelete: { simulationData.run3T4ivinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4IVDoseInput), ("Start Day", d.T4IVDoseStart)], onDelete: del) } }
+                            if !simulationData.run3T4infusioninputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4Infusion, title: "T4-INFUSION DOSE (Run 3)", imageName: "infusion2", onDelete: { simulationData.run3T4infusioninputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4InfusionDoseInput), ("Start Day", d.T4InfusionDoseStart), ("End Day", d.T4InfusionDoseEnd)], onDelete: del) } }
+
+                            Button(action: { runSimulationAndNavigate() }) {
+                                HStack {
+                                    Spacer()
+                                    if isSimulating { ProgressView() } else { Text("Simulate Dosing").fontWeight(.bold) }
+                                    Spacer()
+                                }
+                            }
+                            .disabled(isSimulating)
+                            .padding()
                         }
-                        .disabled(isSimulating)
                         .padding()
                     }
-                    .navigationTitle("Configure Run 3 Dosing Simulation")
-                    .navigationBarTitleDisplayMode(.inline)
-                    // Auto-push to dose-adding screen when asked to start at .dosing
-                    .navigationDestination(isPresented: $navigateToDosingInput) {
-                        Run3DosingInputView()
-                    }
-                    // Navigate to graphs after simulation
+                    .background(Color.init(red: 0, green: 0, blue: 0).edgesIgnoringSafeArea(.all))
                     .navigationDestination(isPresented: $navigateToGraph) {
                         if let run3Result = run3Result, let days = Int(simulationDays) {
                             Run3GraphView(run3Result: run3Result, simulationDurationDays: days)
                         }
                     }
                 }
-                .onAppear {
-                    // Clear previous result if any
-                    if self.run3Result != nil {
-                        self.run3Result = nil
-                    }
-                    // If caller wants to land on the dose-adding page, push it
-                    if startAt == .dosing && !navigateToDosingInput {
-                        navigateToDosingInput = true
-                    }
+                .onAppear { if self.run3Result != nil { self.run3Result = nil } }
+                .onChange(of: simulationData.run2Result?.q_final?.count ?? -1) { _, _ in
+                    self.run3Result = nil
+                    self.navigateToGraph = false
+                    simulationData.run3Result = nil
                 }
             } else {
                 VStack {
@@ -125,7 +109,17 @@ struct Run3View: View {
                         .multilineTextAlignment(.center)
                         .padding()
                 }
-                .navigationTitle("Simulate Run 3")
+                .navigationTitle("Simulate Dosing")
+            }
+        }
+        .sheet(item: $activePopup) { popup in
+            switch popup {
+            case .T3OralInputs: T3OralPopupView { dose in simulationData.run3T3oralinputs.append(dose) }
+            case .T3IVInputs: T3IVPopupView { dose in simulationData.run3T3ivinputs.append(dose) }
+            case .T3InfusionInputs: T3InfusionPopupView { dose in simulationData.run3T3infusioninputs.append(dose) }
+            case .T4OralInputs: T4OralPopupView { dose in simulationData.run3T4oralinputs.append(dose) }
+            case .T4IVInputs: T4IVPopupView { dose in simulationData.run3T4ivinputs.append(dose) }
+            case .T4InfusionInputs: T4InfusionPopupView { dose in simulationData.run3T4infusioninputs.append(dose) }
             }
         }
     }
@@ -145,88 +139,94 @@ struct Run3View: View {
         Task {
             let heightInMeters = (selectedHeightUnit == "cm") ? hVal / 100.0 : ((selectedHeightUnit == "in") ? hVal * 0.0254 : hVal)
             let weightInKg = (selectedWeightUnit == "lb") ? wVal * 0.453592 : wVal
+            let normalizedGender = selectedGender.uppercased()
 
-            let simulator = ThyroidSimulator(
-                t4Secretion: t4Sec,
-                t3Secretion: t3Sec,
-                t4Absorption: t4Abs,
-                t3Absorption: t3Abs,
-                gender: selectedGender,
-                height: heightInMeters,
-                weight: weightInKg,
-                days: days,
-                t3OralDoses: simulationData.run3T3oralinputs,
-                t4OralDoses: simulationData.run3T4oralinputs,
-                t3IVDoses: simulationData.run3T3ivinputs,
-                t4IVDoses: simulationData.run3T4ivinputs,
-                t3InfusionDoses: simulationData.run3T3infusioninputs,
-                t4InfusionDoses: simulationData.run3T4infusioninputs,
-                isInitialConditionsOn: isInitialConditionsOn
+            var simulator = ThyroidSimulator(
+                t4Secretion: t4Sec, t3Secretion: t3Sec, t4Absorption: t4Abs, t3Absorption: t3Abs,
+                gender: normalizedGender, height: heightInMeters, weight: weightInKg, days: days,
+                t3OralDoses: simulationData.run3T3oralinputs, t4OralDoses: simulationData.run3T4oralinputs,
+                t3IVDoses: simulationData.run3T3ivinputs, t4IVDoses: simulationData.run3T4ivinputs,
+                t3InfusionDoses: simulationData.run3T3infusioninputs, t4InfusionDoses: simulationData.run3T4infusioninputs,
+                isInitialConditionsOn: false
             )
+
+            simulator.initialState = simulationData.run2Result?.q_final
             let result = simulator.runSimulation()
 
             await MainActor.run {
                 self.run3Result = result
-                self.simulationData.previousRun3Results.append(result)
                 self.isSimulating = false
                 self.navigateToGraph = true
+                self.simulationData.run3Result = result
+                self.simulationData.previousRun3Results.append(result)
             }
         }
     }
+    
+    private func format(dose: T4OralDose) -> String { "Oral T4: \(String(format: "%.1f", dose.T4OralDoseInput))µg" + (dose.T4SingleDose ? " at day \(String(format: "%.1f", dose.T4OralDoseStart))" : " every \(String(format: "%.1f", dose.T4OralDoseInterval)) days") }
+    private func format(dose: T4IVDose) -> String { "IV T4: \(String(format: "%.1f", dose.T4IVDoseInput))µg at day \(String(format: "%.1f", dose.T4IVDoseStart))" }
+    private func format(dose: T4InfusionDose) -> String { "Infusion T4: \(String(format: "%.1f", dose.T4InfusionDoseInput))µg from day \(String(format: "%.1f", dose.T4InfusionDoseStart)) to \(String(format: "%.1f", dose.T4InfusionDoseEnd))" }
+    private func format(dose: T3OralDose) -> String { "Oral T3: \(String(format: "%.1f", dose.T3OralDoseInput))µg" + (dose.T3SingleDose ? " at day \(String(format: "%.1f", dose.T3OralDoseStart))" : " every \(String(format: "%.1f", dose.T3OralDoseInterval)) days") }
+    private func format(dose: T3IVDose) -> String { "IV T3: \(String(format: "%.1f", dose.T3IVDoseInput))µg at day \(String(format: "%.1f", dose.T3IVDoseStart))" }
+    private func format(dose: T3InfusionDose) -> String { "Infusion T3: \(String(format: "%.1f", dose.T3InfusionDoseInput))µg from day \(String(format: "%.1f", dose.T3InfusionDoseStart)) to \(String(format: "%.1f", dose.T3InfusionDoseEnd))" }
+}
 
-    // Format functions for dose display
-    private func format(dose: T4OralDose) -> String {
-        let formattedDose = String(format: "%.1f", dose.T4OralDoseInput)
-        let formattedStart = String(format: "%.1f", dose.T4OralDoseStart)
-        let formattedInterval = String(format: "%.1f", dose.T4OralDoseInterval)
-        return "Oral T4: \(formattedDose)µg" + (dose.T4SingleDose ? " at day \(formattedStart)" : " every \(formattedInterval) days")
+fileprivate struct BulletRows<Content: View>: View {
+    private let content: Content
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
     }
-
-    private func format(dose: T3OralDose) -> String {
-        let formattedDose = String(format: "%.1f", dose.T3OralDoseInput)
-        let formattedStart = String(format: "%.1f", dose.T3OralDoseStart)
-        let formattedInterval = String(format: "%.1f", dose.T3OralDoseInterval)
-        return "Oral T3: \(formattedDose)µg" + (dose.T3SingleDose ? " at day \(formattedStart)" : " every \(formattedInterval) days")
-    }
-
-    private func format(dose: T4IVDose) -> String {
-        let formattedDose = String(format: "%.1f", dose.T4IVDoseInput)
-        let formattedStart = String(format: "%.1f", dose.T4IVDoseStart)
-        return "IV T4: \(formattedDose)µg at day \(formattedStart)"
-    }
-
-    private func format(dose: T3IVDose) -> String {
-        let formattedDose = String(format: "%.1f", dose.T3IVDoseInput)
-        let formattedStart = String(format: "%.1f", dose.T3IVDoseStart)
-        return "IV T3: \(formattedDose)µg at day \(formattedStart)"
-    }
-
-    private func format(dose: T4InfusionDose) -> String {
-        let formattedDose = String(format: "%.1f", dose.T4InfusionDoseInput)
-        let formattedStart = String(format: "%.1f", dose.T4InfusionDoseStart)
-        let formattedEnd = String(format: "%.1f", dose.T4InfusionDoseEnd)
-        return "Infusion T4: \(formattedDose)µg from day \(formattedStart) to \(formattedEnd)"
-    }
-
-    private func format(dose: T3InfusionDose) -> String {
-        let formattedDose = String(format: "%.1f", dose.T3InfusionDoseInput)
-        let formattedStart = String(format: "%.1f", dose.T3InfusionDoseStart)
-        let formattedEnd = String(format: "%.1f", dose.T3InfusionDoseEnd)
-        return "Infusion T3: \(formattedDose)µg from day \(formattedStart) to \(formattedEnd)"
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("•").font(.subheadline).foregroundColor(.white).frame(width: 14, alignment: .leading)
+            VStack(alignment: .center, spacing: 2) {
+                content.font(.subheadline).foregroundColor(.white).multilineTextAlignment(.center).frame(maxWidth: .infinity, alignment: .center)
+            }.frame(maxWidth: .infinity, alignment: .center)
+        }
     }
 }
 
-// --- Helper view for simply displaying lists of doses ---
-fileprivate struct DoseDisplayView<T: Identifiable, Content: View>: View {
-    let doses: [T]
-    let content: (T) -> Content
+fileprivate struct DoseDisplaySection<T: Identifiable, Content: View>: View {
+    let doses: [(Int, T)]
+    let title: String
+    let imageName: String
+    let onDelete: (Int) -> Void
+    let content: (Int, T, @escaping () -> Void) -> Content
+
     var body: some View {
-        if doses.isEmpty {
-            Text("No doses added.").foregroundColor(.gray)
-        } else {
-            ForEach(doses) { dose in
-                content(dose)
+        Section {
+            ForEach(doses, id: \.1.id) { index, doseData in
+                content(index, doseData) { onDelete(index) }
+            }
+        } header: {
+            HStack(alignment: .center, spacing: 10) {
+                Image(imageName).resizable().frame(width: 30, height: 30)
+                Text(title).font(.title2.bold()).foregroundColor(.white)
             }
         }
+    }
+}
+
+fileprivate struct DoseDetailsView: View {
+    let index: Int
+    let details: [(String, Float)]
+    var conditionalDetails: [(String, Float)]? = nil
+    let onDelete: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Dose \(index + 1)").font(.headline).foregroundColor(.white)
+                Spacer()
+                Button("Delete") { onDelete() }.foregroundColor(.red)
+            }
+            ForEach(details, id: \.0) { item in HStack { Text(item.0).foregroundColor(.gray); Spacer(); Text(String(format: "%.1f", item.1)).foregroundColor(.white) } }
+            if let conditionalDetails = conditionalDetails {
+                ForEach(conditionalDetails, id: \.0) { item in HStack { Text(item.0).foregroundColor(.gray); Spacer(); Text(String(format: "%.1f", item.1)).foregroundColor(.white) } }
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.2))
+        .cornerRadius(8)
     }
 }

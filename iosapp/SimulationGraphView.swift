@@ -16,9 +16,21 @@ struct SimulationGraphView: View {
     @State private var pdfURL: URL?
     @State private var showShareSheet = false
     
-    
+    // AppStorage variables to retrieve simulation conditions
+    @AppStorage("t4Secretion") private var t4Secretion: String = "100"
+    @AppStorage("t3Secretion") private var t3Secretion: String = "100"
+    @AppStorage("t4Absorption") private var t4Absorption: String = "88"
+    @AppStorage("t3Absorption") private var t3Absorption: String = "88"
+    @AppStorage("height") private var height: String = "170"
+    @AppStorage("weight") private var weight: String = "70"
+    @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "cm"
+    @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg"
+    @AppStorage("selectedGender") private var selectedGender: String = "FEMALE"
+    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = true
+
     @State private var testURL: URL?
     @State private var showTestShare = false
+    @Environment(\.presentationMode) var presentationMode
 
     // --- CORRECTED VIEW FOR PDF EXPORT ---
     // This view now contains ONLY the elements we want in the PDF, excluding the problematic UI controls.
@@ -26,6 +38,20 @@ struct SimulationGraphView: View {
         VStack(spacing: 20) {
             Text("Run 1 Simulation")
                 .font(.title).fontWeight(.bold).padding(.top)
+
+            SimulationConditionsView(
+                t4Secretion: t4Secretion,
+                t3Secretion: t3Secretion,
+                t4Absorption: t4Absorption,
+                t3Absorption: t3Absorption,
+                height: height,
+                weight: weight,
+                heightUnit: selectedHeightUnit,
+                weightUnit: selectedWeightUnit,
+                gender: selectedGender,
+                simulationDays: String(simulationDurationDays),
+                isInitialConditionsOn: isInitialConditionsOn
+            )
 
             let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
             
@@ -141,30 +167,35 @@ struct SimulationGraphView: View {
         }
         .navigationTitle("Run 1 Simulation")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            // --- CORRECTED BUTTON ACTION ---
-                            // Use a Task to run the async PDF rendering
-                            Task {
-                                // 'await' waits for the function to finish and return the URL
-                                let url = await renderViewToPDF(view: viewToRender)
-                                self.pdfURL = url
-                                self.showShareSheet = true
-                            }
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-
-
- 
-                    }
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Text("Make Changes")
                 }
-                .sheet(isPresented: $showShareSheet) {
-                    if let pdfURL {
-                        ShareSheet(activityItems: [pdfURL])
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    // --- CORRECTED BUTTON ACTION ---
+                    // Use a Task to run the async PDF rendering
+                    Task {
+                        // 'await' waits for the function to finish and return the URL
+                        let url = await renderViewToPDF(view: viewToRender)
+                        self.pdfURL = url
+                        self.showShareSheet = true
                     }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
                 }
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if let pdfURL {
+                ShareSheet(activityItems: [pdfURL])
+            }
+        }
     }
 
     // Helper functions remain the same

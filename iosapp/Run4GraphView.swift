@@ -1,13 +1,13 @@
 import SwiftUI
 import Charts
 
-struct Run3GraphView: View {
+struct Run4GraphView: View {
     private enum HormoneType: String, CaseIterable {
         case free = "Free"
         case total = "Total"
     }
     
-    let run3Result: ThyroidSimulationResult
+    let run4Result: ThyroidSimulationResult
     let simulationDurationDays: Int
     @EnvironmentObject var simulationData: SimulationData
 
@@ -35,7 +35,7 @@ struct Run3GraphView: View {
     // --- CORRECTED VIEW FOR PDF EXPORT ---
     private var viewToRender: some View {
         VStack(spacing: 5) {
-            Text("Run 3 Dosing Simulation Results")
+            Text("Run 4 Dosing Simulation Results")
                 .font(.title2).bold()
                 .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -51,12 +51,12 @@ struct Run3GraphView: View {
                 gender: selectedGender,
                 simulationDays: String(simulationDurationDays),
                 isInitialConditionsOn: isInitialConditionsOn,
-                t3OralDoses: simulationData.run3T3oralinputs,
-                t4OralDoses: simulationData.run3T4oralinputs,
-                t3IVDoses: simulationData.run3T3ivinputs,
-                t4IVDoses: simulationData.run3T4ivinputs,
-                t3InfusionDoses: simulationData.run3T3infusioninputs,
-                t4InfusionDoses: simulationData.run3T4infusioninputs
+                t3OralDoses: simulationData.run4T3oralinputs,
+                t4OralDoses: simulationData.run4T4oralinputs,
+                t3IVDoses: simulationData.run4T3ivinputs,
+                t4IVDoses: simulationData.run4T4ivinputs,
+                t3InfusionDoses: simulationData.run4T3infusioninputs,
+                t4InfusionDoses: simulationData.run4T4infusioninputs
             )
             
             let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
@@ -65,15 +65,15 @@ struct Run3GraphView: View {
                 title: selectedHormoneType == .free ? "Free T4" : "T4",
                 yLabel: selectedHormoneType == .free ? "FT4 (ng/dL)" : "T4 (µg/L)",
                 xLabel: "Days",
-                values: t4GraphData_Run3,
+                values: t4GraphData_Run4,
                 color: .blue,
                 secondaryValues: showPreviousRuns ? run1T4GraphData : nil,
                 secondaryColor: .red.opacity(0.8),
                 tertiaryValues: showPreviousRuns ? run2T4GraphData : nil,
                 tertiaryColor: .purple.opacity(0.8),
-                quaternaryValues: nil, // NEW
-                quaternaryColor: nil, // NEW
-                yAxisRange: calculateYAxisDomain(for: t4GraphData_Run3.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
+                quaternaryValues: showPreviousRuns ? run3T4GraphData : nil,
+                quaternaryColor: .orange.opacity(0.8),
+                yAxisRange: calculateYAxisDomain(for: t4GraphData_Run4.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
             )
@@ -82,15 +82,15 @@ struct Run3GraphView: View {
                 title: selectedHormoneType == .free ? "Free T3" : "T3",
                 yLabel: selectedHormoneType == .free ? "FT3 (pg/mL)" : "T3 (ng/dL)",
                 xLabel: "Days",
-                values: t3GraphData_Run3,
+                values: t3GraphData_Run4,
                 color: .blue,
                 secondaryValues: showPreviousRuns ? run1T3GraphData : nil,
                 secondaryColor: .red.opacity(0.8),
                 tertiaryValues: showPreviousRuns ? run2T3GraphData : nil,
                 tertiaryColor: .purple.opacity(0.8),
-                quaternaryValues: nil, // NEW
-                quaternaryColor: nil, // NEW
-                yAxisRange: calculateYAxisDomain(for: t3GraphData_Run3.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
+                quaternaryValues: showPreviousRuns ? run3T3GraphData : nil,
+                quaternaryColor: .orange.opacity(0.8),
+                yAxisRange: calculateYAxisDomain(for: t3GraphData_Run4.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
             )
@@ -99,15 +99,15 @@ struct Run3GraphView: View {
                 title: "TSH",
                 yLabel: "TSH (mU/L)",
                 xLabel: "Days",
-                values: tshGraphData_Run3,
+                values: tshGraphData_Run4,
                 color: .blue,
                 secondaryValues: showPreviousRuns ? run1TshGraphData : nil,
                 secondaryColor: .red.opacity(0.8),
                 tertiaryValues: showPreviousRuns ? run2TshGraphData : nil,
                 tertiaryColor: .purple.opacity(0.8),
-                quaternaryValues: nil, // NEW
-                quaternaryColor: nil, // NEW
-                yAxisRange: calculateYAxisDomain(for: tshGraphData_Run3.map { $0.1 }, title: "TSH"),
+                quaternaryValues: showPreviousRuns ? run3TshGraphData : nil,
+                quaternaryColor: .orange.opacity(0.8),
+                yAxisRange: calculateYAxisDomain(for: tshGraphData_Run4.map { $0.1 }, title: "TSH"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
             )
@@ -139,7 +139,7 @@ struct Run3GraphView: View {
                                 .font(.footnote)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
-                            // Legend for Run 3 graphs (in chronological order)
+                            // Legend for Run 4 graphs (in chronological order)
                             if showPreviousRuns {
                                 HStack(spacing: 15) {
                                     HStack(spacing: 6) {
@@ -157,12 +157,20 @@ struct Run3GraphView: View {
                                         Text("Run 2")
                                             .font(.caption)
                                     }
+
+                                    HStack(spacing: 6) {
+                                        Rectangle()
+                                            .fill(Color.orange.opacity(0.8))
+                                            .frame(width: 20, height: 3)
+                                        Text("Run 3")
+                                            .font(.caption)
+                                    }
                                     
                                     HStack(spacing: 6) {
                                         Rectangle()
                                             .fill(Color.blue)
                                             .frame(width: 20, height: 3)
-                                        Text("Run 3")
+                                        Text("Run 4")
                                             .font(.caption)
                                     }
                                 }
@@ -180,15 +188,15 @@ struct Run3GraphView: View {
                     title: selectedHormoneType == .free ? "Free T4" : "T4",
                     yLabel: selectedHormoneType == .free ? "FT4 (ng/dL)" : "T4 (µg/L)",
                     xLabel: "Days",
-                    values: t4GraphData_Run3,
+                    values: t4GraphData_Run4,
                     color: .blue,
                     secondaryValues: showPreviousRuns ? run1T4GraphData : nil,
                     secondaryColor: .red,
                     tertiaryValues: showPreviousRuns ? run2T4GraphData : nil,
                     tertiaryColor: .purple,
-                    quaternaryValues: nil, // NEW
-                    quaternaryColor: nil, // NEW
-                    yAxisRange: calculateYAxisDomain(for: t4GraphData_Run3.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
+                    quaternaryValues: showPreviousRuns ? run3T4GraphData : nil,
+                    quaternaryColor: .orange,
+                    yAxisRange: calculateYAxisDomain(for: t4GraphData_Run4.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange,
                     chartHeight: h
@@ -198,15 +206,15 @@ struct Run3GraphView: View {
                     title: selectedHormoneType == .free ? "Free T3" : "T3",
                     yLabel: selectedHormoneType == .free ? "FT3 (pg/mL)" : "T3 (ng/dL)",
                     xLabel: "Days",
-                    values: t3GraphData_Run3,
+                    values: t3GraphData_Run4,
                     color: .blue,
                     secondaryValues: showPreviousRuns ? run1T3GraphData : nil,
                     secondaryColor: .red,
                     tertiaryValues: showPreviousRuns ? run2T3GraphData : nil,
                     tertiaryColor: .purple,
-                    quaternaryValues: nil, // NEW
-                    quaternaryColor: nil, // NEW
-                    yAxisRange: calculateYAxisDomain(for: t3GraphData_Run3.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
+                    quaternaryValues: showPreviousRuns ? run3T3GraphData : nil,
+                    quaternaryColor: .orange,
+                    yAxisRange: calculateYAxisDomain(for: t3GraphData_Run4.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange,
                     chartHeight: h
@@ -216,15 +224,15 @@ struct Run3GraphView: View {
                     title: "TSH",
                     yLabel: "TSH (mU/L)",
                     xLabel: "Days",
-                    values: tshGraphData_Run3,
+                    values: tshGraphData_Run4,
                     color: .blue,
                     secondaryValues: showPreviousRuns ? run1TshGraphData : nil,
                     secondaryColor: .red,
                     tertiaryValues: showPreviousRuns ? run2TshGraphData : nil,
                     tertiaryColor: .purple,
-                    quaternaryValues: nil, // NEW
-                    quaternaryColor: nil, // NEW
-                    yAxisRange: calculateYAxisDomain(for: tshGraphData_Run3.map { $0.1 }, title: "TSH"),
+                    quaternaryValues: showPreviousRuns ? run3TshGraphData : nil,
+                    quaternaryColor: .orange,
+                    yAxisRange: calculateYAxisDomain(for: tshGraphData_Run4.map { $0.1 }, title: "TSH"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange,
                     chartHeight: h
@@ -232,7 +240,7 @@ struct Run3GraphView: View {
             }
             .padding()
         }
-        .navigationTitle("Run 3 Dosing Simulation")
+        .navigationTitle("Run 4 Dosing Simulation")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -266,16 +274,16 @@ struct Run3GraphView: View {
     }
     
     // Helper functions for current run data
-    private var t4GraphData_Run3: [(Double, Double)] {
-        let sourceData = selectedHormoneType == .free ? run3Result.ft4 : run3Result.t4
-        return zip(run3Result.time, sourceData).filter { $0.1.isFinite }
+    private var t4GraphData_Run4: [(Double, Double)] {
+        let sourceData = selectedHormoneType == .free ? run4Result.ft4 : run4Result.t4
+        return zip(run4Result.time, sourceData).filter { $0.1.isFinite }
     }
-    private var t3GraphData_Run3: [(Double, Double)] {
-        let sourceData = selectedHormoneType == .free ? run3Result.ft3 : run3Result.t3
-        return zip(run3Result.time, sourceData).filter { $0.1.isFinite }
+    private var t3GraphData_Run4: [(Double, Double)] {
+        let sourceData = selectedHormoneType == .free ? run4Result.ft3 : run4Result.t3
+        return zip(run4Result.time, sourceData).filter { $0.1.isFinite }
     }
-    private var tshGraphData_Run3: [(Double, Double)] {
-        return zip(run3Result.time, run3Result.tsh).filter { $0.1.isFinite }
+    private var tshGraphData_Run4: [(Double, Double)] {
+        return zip(run4Result.time, run4Result.tsh).filter { $0.1.isFinite }
     }
     
     // Helper functions for Run 1 data (green line)
@@ -343,6 +351,39 @@ struct Run3GraphView: View {
         
         return nil
     }
+
+    // Helper functions for Run 3 data (purple line)
+    private var run3T4GraphData: [(Double, Double)]? {
+        guard showPreviousRuns else { return nil }
+        
+        if let run3Result = simulationData.run3Result {
+            let sourceData = selectedHormoneType == .free ? run3Result.ft4 : run3Result.t4
+            return zip(run3Result.time, sourceData).filter { $0.1.isFinite }
+        }
+        
+        return nil
+    }
+    
+    private var run3T3GraphData: [(Double, Double)]? {
+        guard showPreviousRuns else { return nil }
+        
+        if let run3Result = simulationData.run3Result {
+            let sourceData = selectedHormoneType == .free ? run3Result.ft3 : run3Result.t3
+            return zip(run3Result.time, sourceData).filter { $0.1.isFinite }
+        }
+        
+        return nil
+    }
+    
+    private var run3TshGraphData: [(Double, Double)]? {
+        guard showPreviousRuns else { return nil }
+        
+        if let run3Result = simulationData.run3Result {
+            return zip(run3Result.time, run3Result.tsh).filter { $0.1.isFinite }
+        }
+        
+        return nil
+    }
     
     // Helper function to get all previous runs for consistent Y-axis calculation
     private func getAllPreviousRuns() -> [ThyroidSimulationResult] {
@@ -356,6 +397,11 @@ struct Run3GraphView: View {
         // Add Run 2 if available
         if let run2Result = simulationData.run2Result {
             allRuns.append(run2Result)
+        }
+
+        // Add Run 3 if available
+        if let run3Result = simulationData.run3Result {
+            allRuns.append(run3Result)
         }
         
         return allRuns
@@ -416,4 +462,3 @@ struct Run3GraphView: View {
         return 0...(upperBound + padding)
     }
 }
-

@@ -20,33 +20,31 @@ struct Step1View: View {
     @State private var contentHeight: CGFloat = 1
     @State private var scrollViewHeight: CGFloat = 1
 
+    // Input validation state
+    @State private var t4SecretionError: String?
+    @State private var t4AbsorptionError: String?
+    @State private var t3SecretionError: String?
+    @State private var t3AbsorptionError: String?
+    @State private var simulationDaysError: String?
+    @State private var heightError: String?
+    @State private var weightError: String?
+    @State private var isSyncing = false
+
     let genders = ["MALE", "FEMALE"]
     let heightUnits = ["cm", "in"]
     let weightUnits = ["lb", "kg"]
-
-    // Scroll tracking state
 
     var body: some View {
         NavigationView {
             ZStack(alignment: .topTrailing) {
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        // Track scroll offset using GeometryReader
-                        GeometryReader { geo -> Color in
-                            DispatchQueue.main.async {
-                                self.scrollOffset = -geo.frame(in: .named("scroll")).origin.y
-                            }
-                            return Color.clear
-                        }
-                        .frame(height: 0) // invisible spacer to track scroll position
-
+                    VStack(spacing: 15) {
                         Text("Enter Simulation Conditions")
                             .font(.title2)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .padding(.top)
                         
-                    
                         VStack(spacing: 6) {
                             BulletRow(text: "Normal euthyroid defaults shown")
                             BulletRow(text: "To simulate hypothyroidism or malabsorption conditions:")
@@ -54,22 +52,43 @@ struct Step1View: View {
                             BulletRow(text: "Modify T3/T4 oral absorption from 88%")
                         }
 
-
                         Group {
-                            Step1InputField(title: "Change T4 Secretion (0–125%)*", value: $t4Secretion, keyboardType: .decimalPad)
-                            Step1InputField(title: "Change T4 Absorption (0–100%)", value: $t4Absorption, keyboardType: .decimalPad)
-                            Step1InputField(title: "Change T3 Secretion (0–125%)*", value: $t3Secretion, keyboardType: .decimalPad)
-                            Step1InputField(title: "Change T3 Absorption (0–100%)", value: $t3Absorption, keyboardType: .decimalPad)
+                            Step1InputField(title: "Change T4 Secretion (0–125%)*", value: $t4Secretion, errorMessage: t4SecretionError, keyboardType: .decimalPad)
+                                .onChange(of: t4Secretion) { newValue in
+                                    let isValid = validate(value: newValue, in: 0...125, errorState: $t4SecretionError, fieldName: "T4 Secretion")
+                                    if isValid && !isSyncing {
+                                        isSyncing = true
+                                        t3Secretion = newValue
+                                        isSyncing = false
+                                    }
+                                }
+                            
+                            Step1InputField(title: "Change T4 Absorption (0–100%)", value: $t4Absorption, errorMessage: t4AbsorptionError, keyboardType: .decimalPad)
+                                .onChange(of: t4Absorption) { newValue in
+                                    _ = validate(value: newValue, in: 0...100, errorState: $t4AbsorptionError, fieldName: "T4 Absorption")
+                                }
+
+                            Step1InputField(title: "Change T3 Secretion (0–125%)*", value: $t3Secretion, errorMessage: t3SecretionError, keyboardType: .decimalPad)
+                                .onChange(of: t3Secretion) { newValue in
+                                    let isValid = validate(value: newValue, in: 0...125, errorState: $t3SecretionError, fieldName: "T3 Secretion")
+                                    if isValid && !isSyncing {
+                                        isSyncing = true
+                                        t4Secretion = newValue
+                                        isSyncing = false
+                                    }
+                                }
+
+                            Step1InputField(title: "Change T3 Absorption (0–100%)", value: $t3Absorption, errorMessage: t3AbsorptionError, keyboardType: .decimalPad)
+                                .onChange(of: t3Absorption) { newValue in
+                                    _ = validate(value: newValue, in: 0...100, errorState: $t3AbsorptionError, fieldName: "T3 Absorption")
+                                }
 
                             VStack(alignment: .leading, spacing: 5) {
                                 Text("Gender")
                                     .font(.callout)
                                     .foregroundColor(.white)
                                 Picker("Gender", selection: $selectedGender) {
-                                    ForEach(genders, id: \.self) { gender in
-                                        Text(gender)
-                                            .tag(gender)
-                                    }
+                                    ForEach(genders, id: \.self) { Text($0) }
                                 }
                                 .pickerStyle(SegmentedPickerStyle())
                                 .background(Color.gray.opacity(0.6))
@@ -77,36 +96,34 @@ struct Step1View: View {
                             }
                             .padding(.horizontal)
 
-                            // Height Input with Unit Picker
                             HStack {
-                                Step1InputField(title: "Height", value: $height, keyboardType: .decimalPad)
-                                Picker("Height Unit", selection: $selectedHeightUnit) {
-                                    ForEach(heightUnits, id: \.self) { unit in
-                                        Text(unit)
+                                Step1InputField(title: "Height", value: $height, errorMessage: heightError, keyboardType: .decimalPad)
+                                    .onChange(of: height) { newValue in
+                                        _ = validate(value: newValue, in: 0...300, errorState: $heightError, fieldName: "Height")
                                     }
+                                Picker("Unit", selection: $selectedHeightUnit) {
+                                    ForEach(heightUnits, id: \.self) { Text($0) }
                                 }
                                 .pickerStyle(SegmentedPickerStyle())
                                 .frame(width: 150)
-                                .background(Color.gray.opacity(0.6))
-                                .cornerRadius(8)
                             }.padding(.horizontal)
 
-                            // Weight Input with Unit Picker
                             HStack {
-                                Step1InputField(title: "Weight", value: $weight, keyboardType: .decimalPad)
-                                Picker("Weight Unit", selection: $selectedWeightUnit) {
-                                    ForEach(weightUnits, id: \.self) { unit in
-                                        Text(unit)
+                                Step1InputField(title: "Weight", value: $weight, errorMessage: weightError, keyboardType: .decimalPad)
+                                    .onChange(of: weight) { newValue in
+                                        _ = validate(value: newValue, in: 0...1000, errorState: $weightError, fieldName: "Weight")
                                     }
+                                Picker("Unit", selection: $selectedWeightUnit) {
+                                    ForEach(weightUnits, id: \.self) { Text($0) }
                                 }
                                 .pickerStyle(SegmentedPickerStyle())
                                 .frame(width: 150)
-                                .background(Color.gray.opacity(0.6))
-                                .cornerRadius(8)
                             }.padding(.horizontal)
 
-                            Step1InputField(title: "Simulation Interval (days <= 100)", value: $simulationDays, keyboardType: .numberPad)
-                        }
+                            Step1InputField(title: "Simulation Interval (days <= 100)", value: $simulationDays, errorMessage: simulationDaysError, keyboardType: .numberPad)
+                                .onChange(of: simulationDays) { newValue in
+                                    _ = validate(value: newValue, in: 1...100, errorState: $simulationDaysError, fieldName: "Simulation Interval")
+                                }                        }
 
                         VStack(alignment: .leading, spacing: 10) {
                             Toggle(isOn: $isInitialConditionsOn) {
@@ -114,78 +131,67 @@ struct Step1View: View {
                                     .foregroundColor(.white)
                             }
                             .toggleStyle(SwitchToggleStyle(tint: .red))
-
-                            Text("When this switch is ON, initial conditions (IC) are recalculated. When this switch is OFF, initial conditions are set to euthyroid.")
+                            Text("When the switch is ON, SR initial conditions")
+                                .font(.footnote)
+                                .foregroundColor(.white)
+                            Text("Recalculated to match new inputs.")
                                 .font(.footnote)
                                 .foregroundColor(.white)
                         }
-                        
                         .padding()
-                        
 
                         Text("*Note: SR is capped at 125% because model is not validated for hyperthyroid conditions.")
                             .font(.footnote)
                             .foregroundColor(.white)
                             .padding(.bottom, 30)
                     }
-                    .background(
-                        GeometryReader { geo -> Color in
-                            DispatchQueue.main.async {
-                                self.contentHeight = geo.size.height
-                            }
-                            return Color.clear
-                        }
-                    )
                     .padding()
-                    .frame(maxWidth: .infinity, alignment: .top)
                 }
-                .coordinateSpace(name: "scroll")
-                .background(
-                    GeometryReader { geo -> Color in
-                        DispatchQueue.main.async {
-                            self.scrollViewHeight = geo.size.height
-                        }
-                        return Color.clear
-                    }
-                )
                 .background(Color.black.ignoresSafeArea())
-
-                // Custom scrollbar
-                if contentHeight > scrollViewHeight {
-                    let maxScroll = max(contentHeight - scrollViewHeight, 1)
-                    let clampedScrollOffset = min(max(scrollOffset, 0), maxScroll)
-                    let scrollProgress = clampedScrollOffset / maxScroll
-                    let visibleRatio = scrollViewHeight / contentHeight
-                    let thumbHeight = max(scrollViewHeight * visibleRatio * 0.25, 10)
-                    let thumbTop = scrollProgress * (scrollViewHeight - thumbHeight)
-
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.gray.opacity(0.8))
-                        .frame(width: 8, height: thumbHeight)
-                        .padding(.trailing, 4)
-                        .offset(y: thumbTop)
-                        .animation(.easeInOut(duration: 0.15), value: thumbTop)
-                }
+                .navigationTitle("Step 1")
+                .navigationBarHidden(true)
             }
-            .navigationTitle("Step 1")
-            .onAppear {
-                if selectedGender.isEmpty || !genders.contains(selectedGender) {
-                    selectedGender = "FEMALE"
-                }
-            }
-            .navigationBarHidden(true)
-
+            .onAppear(perform: validateAllFields)
         }
+    }
+
+    private func validate(value: String, in range: ClosedRange<Double>, errorState: Binding<String?>, fieldName: String) -> Bool {
+        guard !value.isEmpty else {
+            errorState.wrappedValue = "\(fieldName) cannot be empty."
+            return false
+        }
+        guard let doubleValue = Double(value) else {
+            errorState.wrappedValue = "\(fieldName) must be a valid number."
+            return false
+        }
+        if !range.contains(doubleValue) {
+            errorState.wrappedValue = "\(fieldName) must be between \(Int(range.lowerBound)) and \(Int(range.upperBound))."
+            return false
+        } else {
+            errorState.wrappedValue = nil
+            return true
+        }
+    }
+
+    private func validateAllFields() {
+        _ = validate(value: t4Secretion, in: 0...125, errorState: $t4SecretionError, fieldName: "T4 Secretion")
+        _ = validate(value: t4Absorption, in: 0...100, errorState: $t4AbsorptionError, fieldName: "T4 Absorption")
+        _ = validate(value: t3Secretion, in: 0...125, errorState: $t3SecretionError, fieldName: "T3 Secretion")
+        _ = validate(value: t3Absorption, in: 0...100, errorState: $t3AbsorptionError, fieldName: "T3 Absorption")
+        _ = validate(value: simulationDays, in: 1...100, errorState: $simulationDaysError, fieldName: "Simulation Interval")
+        _ = validate(value: height, in: 0...300, errorState: $heightError, fieldName: "Height")
+        _ = validate(value: weight, in: 0...1000, errorState: $weightError, fieldName: "Weight")
     }
 }
 
 struct Step1InputField: View {
     var title: String
     @Binding var value: String
+    var errorMessage: String?
     var keyboardType: UIKeyboardType = .default
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.callout)
                 .foregroundColor(.white)
@@ -194,9 +200,16 @@ struct Step1InputField: View {
                 .padding(10)
                 .background(Color.white.opacity(0.1))
                 .cornerRadius(8)
-                .foregroundColor(.white)
+                .foregroundColor(errorMessage == nil ? .white : .red)
                 .autocorrectionDisabled(true)
                 .textInputAutocapitalization(.never)
+            
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .padding(.leading, 5)
+            }
         }
         .padding(.horizontal)
     }

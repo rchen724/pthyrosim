@@ -64,12 +64,10 @@ struct T4OralPopupView: View {
                                 }
                                 
                                 HStack(alignment: .center) {
-                                    Text("Use Single Dose")
                                     
-                                    Toggle("turn off", isOn: $T4SingleDose)
-                                        .labelsHidden()
-                                        .toggleStyle(SwitchToggleStyle(tint: .blue))
-                                        .frame(width: 100, alignment: .trailing)
+                                    Toggle("Single Dose", isOn: $T4SingleDose)
+                                        .frame(width: 150, alignment: .leading)
+                                    
                                 }
                                 
                                 if !T4SingleDose {

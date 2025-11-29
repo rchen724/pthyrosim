@@ -18,12 +18,46 @@ struct Run2GraphView: View {
     // ----- PDF Export -----
     @State private var pdfURL: URL?
     @State private var showShareSheet = false
+    @Environment(\.presentationMode) var presentationMode
+
+    // AppStorage variables to retrieve simulation conditions
+    @AppStorage("t4Secretion") private var t4Secretion: String = "100"
+    @AppStorage("t3Secretion") private var t3Secretion: String = "100"
+    @AppStorage("t4Absorption") private var t4Absorption: String = "88"
+    @AppStorage("t3Absorption") private var t3Absorption: String = "88"
+    @AppStorage("height") private var height: String = "170"
+    @AppStorage("weight") private var weight: String = "70"
+    @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "cm"
+    @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg"
+    @AppStorage("selectedGender") private var selectedGender: String = "FEMALE"
+    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = true
+
 
     private var viewToRender: some View {
         VStack(spacing: 5) {
             Text("Run 2 Dosing Simulation Results")
                 .font(.title2).bold()
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            SimulationConditionsView(
+                t4Secretion: t4Secretion,
+                t3Secretion: t3Secretion,
+                t4Absorption: t4Absorption,
+                t3Absorption: t3Absorption,
+                height: height,
+                weight: weight,
+                heightUnit: selectedHeightUnit,
+                weightUnit: selectedWeightUnit,
+                gender: selectedGender,
+                simulationDays: String(simulationDurationDays),
+                isInitialConditionsOn: isInitialConditionsOn,
+                t3OralDoses: simulationData.run2T3oralinputs,
+                t4OralDoses: simulationData.run2T4oralinputs,
+                t3IVDoses: simulationData.run2T3ivinputs,
+                t4IVDoses: simulationData.run2T4ivinputs,
+                t3InfusionDoses: simulationData.run2T3infusioninputs,
+                t4InfusionDoses: simulationData.run2T4infusioninputs
+            )
 
             let effectiveXAxisRange: ClosedRange<Double> = 0...Double(max(1, simulationDurationDays))
 
@@ -37,6 +71,8 @@ struct Run2GraphView: View {
                 secondaryColor: .red.opacity(0.8),
                 tertiaryValues: nil,
                 tertiaryColor: nil,
+                quaternaryValues: nil, // NEW
+                quaternaryColor: nil, // NEW
                 yAxisRange: calculateYAxisDomain(for: t4GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
@@ -52,6 +88,8 @@ struct Run2GraphView: View {
                 secondaryColor: .red.opacity(0.8),
                 tertiaryValues: nil,
                 tertiaryColor: nil,
+                quaternaryValues: nil, // NEW
+                quaternaryColor: nil, // NEW
                 yAxisRange: calculateYAxisDomain(for: t3GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
@@ -67,6 +105,8 @@ struct Run2GraphView: View {
                 secondaryColor: .red.opacity(0.8),
                 tertiaryValues: nil,
                 tertiaryColor: nil,
+                quaternaryValues: nil, // NEW
+                quaternaryColor: nil, // NEW
                 yAxisRange: calculateYAxisDomain(for: tshGraphData_Run2.map { $0.1 }, title: "TSH"),
                 xAxisRange: effectiveXAxisRange,
                 showNormalRange: $showNormalRange
@@ -128,6 +168,8 @@ struct Run2GraphView: View {
                     secondaryColor: .red,
                     tertiaryValues: nil,
                     tertiaryColor: nil,
+                    quaternaryValues: nil, // NEW
+                    quaternaryColor: nil, // NEW
                     yAxisRange: calculateYAxisDomain(for: t4GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T4" : "T4"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange,
@@ -144,6 +186,8 @@ struct Run2GraphView: View {
                     secondaryColor: .red,
                     tertiaryValues: nil,
                     tertiaryColor: nil,
+                    quaternaryValues: nil, // NEW
+                    quaternaryColor: nil, // NEW
                     yAxisRange: calculateYAxisDomain(for: t3GraphData_Run2.map { $0.1 }, title: selectedHormoneType == .free ? "Free T3" : "T3"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange,
@@ -160,6 +204,8 @@ struct Run2GraphView: View {
                     secondaryColor: .red,
                     tertiaryValues: nil,
                     tertiaryColor: nil,
+                    quaternaryValues: nil, // NEW
+                    quaternaryColor: nil, // NEW
                     yAxisRange: calculateYAxisDomain(for: tshGraphData_Run2.map { $0.1 }, title: "TSH"),
                     xAxisRange: effectiveXAxisRange,
                     showNormalRange: $showNormalRange,
@@ -170,7 +216,15 @@ struct Run2GraphView: View {
         }
         .navigationTitle("Run 2 Dosing Simulation")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Text("Make Changes")
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     Task {
