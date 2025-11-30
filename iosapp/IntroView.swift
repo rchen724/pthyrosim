@@ -64,7 +64,7 @@ struct IntroView: View {
                 Image("thyrosim")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(height: 225) // Adjust this number (e.g., 300, 400) to get the exact size you want
+                    .frame(height: 225)
                     .padding(.horizontal, 5)
                 Button(action: { showDescription = true }) {
                     Text("Read About p-THYROSIM  FIRST!")
