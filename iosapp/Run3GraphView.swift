@@ -232,7 +232,7 @@ struct Run3GraphView: View {
             }
             .padding()
         }
-        .navigationTitle("Run 3 Dosing Simulation")
+        .navigationTitle("Run 3 Dosing")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {

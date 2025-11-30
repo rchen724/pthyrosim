@@ -216,7 +216,7 @@ struct Run2GraphView: View {
             .padding()
             .padding(.bottom, 20)
         }
-        .navigationTitle("Run 2 Dosing Simulation")
+        .navigationTitle("Run 2 Dosing")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {

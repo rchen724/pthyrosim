@@ -106,6 +106,8 @@ struct Step1View: View {
                                 }
                                 .pickerStyle(SegmentedPickerStyle())
                                 .frame(width: 150)
+                                .background(Color.gray.opacity(0.6))
+                                .cornerRadius(8)
                             }.padding(.horizontal)
 
                             HStack {
@@ -118,6 +120,8 @@ struct Step1View: View {
                                 }
                                 .pickerStyle(SegmentedPickerStyle())
                                 .frame(width: 150)
+                                .background(Color.gray.opacity(0.6))
+                                .cornerRadius(8)
                             }.padding(.horizontal)
 
                             Step1InputField(title: "Simulation Interval (days <= 100)", value: $simulationDays, errorMessage: simulationDaysError, keyboardType: .numberPad)

@@ -64,69 +64,82 @@ struct IntroView: View {
                 Image("thyrosim")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 225)
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 10)
-
-                // Description Button
+                    .frame(height: 225) // Adjust this number (e.g., 300, 400) to get the exact size you want
+                    .padding(.horizontal, 5)
                 Button(action: { showDescription = true }) {
                     Text("Read About p-THYROSIM  FIRST!")
                         .font(.headline)
                         .fontWeight(.semibold)
-                        .padding(10)
+                        .padding(.vertical, 12)
                         .frame(maxWidth: .infinity)
                         .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
-                .padding(.horizontal, 50)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 10)
 
-                // References
-                VStack(spacing: 4) {
-                    Text("References")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                VStack(spacing: 20) {
+                    VStack(spacing: 5) {
+                        Text("References")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .top) {
+                                Text("1.")
+                                Text("Cruz Loya et al. doi: 10.3389/fendo.2022.888429")
+                            }
+                            HStack(alignment: .top) {
+                                Text("2.")
+                                Text("JJ DiStefano III et al. Personalized p-THYROSIM model...")
+                            }
+                        }
+                        .font(.caption)
                         .foregroundColor(.white)
-                    
-                    Text("1. Cruz Loya et al. doi: 10.3389/fendo.2022.888429")
-                        .font(.subheadline)
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.leading)
-                    Text("2. JJ DiStefano III et al. Personalized p-THYROSIM model...")
-                        .font(.subheadline)
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.leading)
-                }
-                .padding(5)
-
-                // People & Acknowledgements
-                VStack(spacing: 8) {
-                    Text("People & Acknowledgements")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("**Director:** JJ DiStefano III")
-                        Text("**App Developers:** Rita Chen, Shruthi S Narayanan, Ashwin Joshi")
-                        Text("**Modeling & Analysis:** Ben Chu, Mauricio Cruz Loya, Karim Ghabra, Katarina Reid, Distefano Lab team")
                     }
-                    //NOTE: LOOK AT SPACING AND WRAP AROUND FOR PEOPLE AND REF
-                    .font(.subheadline)
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+
+                    VStack(spacing: 5) {
+                        Text("People & Acknowledgements")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(alignment: .top) {
+                                Text("Director:")
+                                    .bold()
+                                    .frame(width: 120, alignment: .leading)
+                                Text("JJ DiStefano III")
+                            }
+                            
+                            HStack(alignment: .top) {
+                                Text("App Developers:")
+                                    .bold()
+                                    .frame(width: 120, alignment: .leading)
+                                Text("Rita Chen, Shruthi S Narayanan, Ashwin Joshi")
+                            }
+                            
+                            HStack(alignment: .top) {
+                                Text("Modeling:")
+                                    .bold()
+                                    .frame(width: 120, alignment: .leading)
+                                Text("Ben Chu, Mauricio Cruz Loya, Karim Ghabra, Katarina Reid, Distefano Lab team")
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal)
+                    }
+
+                    Text("© December 2025 by UCLA Biocybernetics Laboratory")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.bottom, 20)
                 }
-                .padding(10)
-                .padding(.horizontal)
-
-                Spacer()
-
-                // Copyright
-                Text("© December 2025 by UCLA Biocybernetics Laboratory")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.bottom, 10)
                 
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
