@@ -33,11 +33,24 @@ struct Step1View: View {
     let genders = ["MALE", "FEMALE"]
     let heightUnits = ["cm", "in"]
     let weightUnits = ["lb", "kg"]
+    
+    init() {
+        UISegmentedControl.appearance().backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        
+        UISegmentedControl.appearance().selectedSegmentTintColor = UIColor.lightGray
+        
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.foregroundColor: UIColor.white], for: .selected
+        )
+        
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.foregroundColor: UIColor.white.withAlphaComponent(0.7)], for: .normal
+        )
+    }
 
     var body: some View {
         NavigationView {
             ZStack(alignment: .topTrailing) {
-                ScrollView(showsIndicators: false) {
                     VStack(spacing: 15) {
                         Text("Enter Simulation Conditions")
                             .font(.title2)
@@ -88,32 +101,33 @@ struct Step1View: View {
                                     }
                             }
                             
-                                }
 
 
                             HStack(alignment: .top, spacing: 15) {
                                 
                                 // 1. Gender Section
                                 VStack(alignment: .leading, spacing: 5) {
-                                    Text("Sex")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.7))
+                                    Text("Gender")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
+                                    
                                     Picker("Gender", selection: $selectedGender) {
                                         Text("M").tag("MALE")
                                         Text("F").tag("FEMALE")
                                     }
                                     .pickerStyle(SegmentedPickerStyle())
-                                    .frame(width: 80) // Fixed width to save space
+                                    .frame(width: 80) // Fixed width
                                 }
                                 
                                 // 2. Height Section
                                 VStack(alignment: .leading, spacing: 5) {
                                     Text("Height")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.7))
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
                                     
                                     HStack(spacing: 5) {
                                         TextField("0", text: $height)
+                                            .foregroundColor(Color.white)
                                             .keyboardType(.decimalPad)
                                             .multilineTextAlignment(.center)
                                             .padding(.vertical, 8)
@@ -123,18 +137,12 @@ struct Step1View: View {
                                                 _ = validate(value: newValue, in: 0...300, errorState: $heightError, fieldName: "Height")
                                             }
                                         
-                                        // Tappable Unit Toggle
-                                        Button(action: {
-                                            selectedHeightUnit = (selectedHeightUnit == "cm") ? "in" : "cm"
-                                        }) {
-                                            Text(selectedHeightUnit)
-                                                .font(.caption).bold()
-                                                .frame(width: 30)
-                                                .padding(.vertical, 8)
-                                                .background(Color.blue.opacity(0.6))
-                                                .foregroundColor(.white)
-                                                .cornerRadius(5)
+                                
+                                        Picker("Height", selection: $selectedHeightUnit) {
+                                            Text("cm").tag("cm")
+                                            Text("in").tag("in")
                                         }
+                                        .pickerStyle(SegmentedPickerStyle())
                                     }
                                     if let error = heightError { // Error Message display
                                         Text(error).font(.system(size: 8)).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
@@ -144,11 +152,12 @@ struct Step1View: View {
                                 // 3. Weight Section
                                 VStack(alignment: .leading, spacing: 5) {
                                     Text("Weight")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.7))
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
                                     
                                     HStack(spacing: 5) {
                                         TextField("0", text: $weight)
+                                            .foregroundColor(Color.white)
                                             .keyboardType(.decimalPad)
                                             .multilineTextAlignment(.center)
                                             .padding(.vertical, 8)
@@ -158,40 +167,50 @@ struct Step1View: View {
                                                 _ = validate(value: newValue, in: 0...1000, errorState: $weightError, fieldName: "Weight")
                                             }
                                         
-                                        // Tappable Unit Toggle
-                                        Button(action: {
-                                            selectedWeightUnit = (selectedWeightUnit == "kg") ? "lb" : "kg"
-                                        }) {
-                                            Text(selectedWeightUnit)
-                                                .font(.caption).bold()
-                                                .frame(width: 30)
-                                                .padding(.vertical, 8)
-                                                .background(Color.blue.opacity(0.6))
-                                                .foregroundColor(.white)
-                                                .cornerRadius(5)
+                                        Picker("Weight", selection: $selectedWeightUnit) {
+                                            Text("kg").tag("kg")
+                                            Text("lb").tag("lb")
                                         }
+                                        .pickerStyle(SegmentedPickerStyle())
                                     }
                                     if let error = weightError { // Error Message display
                                         Text(error).font(.system(size: 8)).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
                                     }
                                 }
                             }
-                            Step1InputField(title: "Simulation Interval (days <= 100)", value: $simulationDays, errorMessage: simulationDaysError, keyboardType: .numberPad)
-                                .onChange(of: simulationDays) { newValue in
-                                    _ = validate(value: newValue, in: 1...100, errorState: $simulationDaysError, fieldName: "Simulation Interval")
-                                }                        }
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("Simulation Interval (days <= 100)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                
+                                TextField("5", text: $simulationDays)
+                                    .keyboardType(.numberPad)
+                                    .padding(10)
+                                    .background(Color.white.opacity(0.1))
+                                    .cornerRadius(8)
+                                    .foregroundColor(.white)
+                                    .onChange(of: simulationDays) { newValue in
+                                        _ = validate(value: newValue, in: 1...100, errorState: $simulationDaysError, fieldName: "Simulation Interval")
+                                    }
+                                
+                                if let error = simulationDaysError {
+                                    Text(error)
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                }
+                            }}
 
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Toggle(isOn: $isInitialConditionsOn) {
                                 Text("Recalculate Initial Conditions")
                                     .foregroundColor(.white)
+                                    .font(.subheadline)
                             }
                             .toggleStyle(SwitchToggleStyle(tint: .red))
                             Text("When this switch is ON, SR3 & SR4 initial conditions (IC) are recalculated to match new inputs. When this switch is OFF, initial conditions are set to euthyroid.")
-                                .font(.subheadline)
+                                .font(.caption)
                                 .foregroundColor(.white)
                         }
-                        .padding()
 
                         Text("*Note: SR3 & SR4 change together & are capped at 125% because model is not validated for hyperthyroid conditions. ")
                             .font(.footnote)
@@ -211,15 +230,15 @@ struct Step1View: View {
 
     private func validate(value: String, in range: ClosedRange<Double>, errorState: Binding<String?>, fieldName: String) -> Bool {
         guard !value.isEmpty else {
-            errorState.wrappedValue = "\(fieldName) cannot be empty."
+            errorState.wrappedValue = "Cannot be empty."
             return false
         }
         guard let doubleValue = Double(value) else {
-            errorState.wrappedValue = "\(fieldName) must be a valid number."
+            errorState.wrappedValue = "Must be a valid number."
             return false
         }
         if !range.contains(doubleValue) {
-            errorState.wrappedValue = "\(fieldName) must be between \(Int(range.lowerBound)) and \(Int(range.upperBound))."
+            errorState.wrappedValue = "Must be between \(Int(range.lowerBound)) and \(Int(range.upperBound))."
             return false
         } else {
             errorState.wrappedValue = nil
