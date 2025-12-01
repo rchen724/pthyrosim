@@ -45,6 +45,20 @@ struct Run2View: View {
                             Text("Run 2 Dosing Input")
                                 .font(.title2.bold())
                                 .foregroundColor(.white)
+                            Text("HOW TO DO IT:")
+                                .foregroundColor(.white)
+                                .font(.headline)
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                    Text("• T3 and/or T4 input dosing can be chosen as oral; OR intravenous (IV) bolus; OR infusion doses.")
+
+                                    Text("• Click the icons to add inputs")
+
+                                    Text("• Click 'SIMULATE DOSING' to simulate and view results")
+
+                            }
+                            .foregroundColor(.white)
+                            .font(.caption)
                             
                             Button(action: { runSimulationAndNavigate() }) {
                                 HStack {
