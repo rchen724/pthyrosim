@@ -45,85 +45,137 @@ struct Step1View: View {
                             .foregroundColor(.white)
                             .padding(.top)
                         
-                        VStack(spacing: 6) {
-                            BulletRow(text: "Normal euthyroid defaults shown")
-                            BulletRow(text: "To simulate hypothyroidism or malabsorption \n     conditions:")
-                            BulletRow(text: "Change T3/T4 secretion rate SR3/4 \n   (% of normal)")
-                            BulletRow(text: "Modify T3/T4 oral absorption from 88%")
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Normal euthyroid defaults shown")
+                            Text("To simulate hypothyroidism or malabsorption conditions:")
+                            Text("• Change T3/T4 secretion rate SR3/4 of normal)")
+                            Text("• Modify T3/T4 oral absorption from 88%")
                         }
+                        .font(.subheadline)
+                        .foregroundColor(.white)
 
                         Group {
-                            Step1InputField(title: "Change T4 Secretion (0–125%)*", value: $t4Secretion, errorMessage: t4SecretionError, keyboardType: .decimalPad)
-                                .onChange(of: t4Secretion) { newValue in
-                                    let isValid = validate(value: newValue, in: 0...125, errorState: $t4SecretionError, fieldName: "T4 Secretion")
-                                    if isValid && !isSyncing {
-                                        isSyncing = true
-                                        t3Secretion = newValue
-                                        isSyncing = false
+                            HStack(spacing: 6){
+                                Step1InputField(title: "T4 Secretion (0–125%)*", value: $t4Secretion, errorMessage: t4SecretionError, keyboardType: .decimalPad)
+                                    .onChange(of: t4Secretion) { newValue in
+                                        let isValid = validate(value: newValue, in: 0...125, errorState: $t4SecretionError, fieldName: "T4 Secretion")
+                                        if isValid && !isSyncing {
+                                            isSyncing = true
+                                            t3Secretion = newValue
+                                            isSyncing = false
+                                        }
                                     }
-                                }
-                            
-                            Step1InputField(title: "Change T4 Absorption (0–100%)", value: $t4Absorption, errorMessage: t4AbsorptionError, keyboardType: .decimalPad)
-                                .onChange(of: t4Absorption) { newValue in
-                                    _ = validate(value: newValue, in: 0...100, errorState: $t4AbsorptionError, fieldName: "T4 Absorption")
-                                }
-
-                            Step1InputField(title: "Change T3 Secretion (0–125%)*", value: $t3Secretion, errorMessage: t3SecretionError, keyboardType: .decimalPad)
-                                .onChange(of: t3Secretion) { newValue in
-                                    let isValid = validate(value: newValue, in: 0...125, errorState: $t3SecretionError, fieldName: "T3 Secretion")
-                                    if isValid && !isSyncing {
-                                        isSyncing = true
-                                        t4Secretion = newValue
-                                        isSyncing = false
+                                
+                                Step1InputField(title: "T4 Absorption (0–100%)", value: $t4Absorption, errorMessage: t4AbsorptionError, keyboardType: .decimalPad)
+                                    .onChange(of: t4Absorption) { newValue in
+                                        _ = validate(value: newValue, in: 0...100, errorState: $t4AbsorptionError, fieldName: "T4 Absorption")
                                     }
-                                }
-
-                            Step1InputField(title: "Change T3 Absorption (0–100%)", value: $t3Absorption, errorMessage: t3AbsorptionError, keyboardType: .decimalPad)
-                                .onChange(of: t3Absorption) { newValue in
-                                    _ = validate(value: newValue, in: 0...100, errorState: $t3AbsorptionError, fieldName: "T3 Absorption")
-                                }
-
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("Gender")
-                                    .font(.callout)
-                                    .foregroundColor(.white)
-                                Picker("Gender", selection: $selectedGender) {
-                                    ForEach(genders, id: \.self) { Text($0) }
-                                }
-                                .pickerStyle(SegmentedPickerStyle())
-                                .background(Color.gray.opacity(0.6))
-                                .cornerRadius(8)
                             }
-                            .padding(.horizontal)
-
-                            HStack {
-                                Step1InputField(title: "Height", value: $height, errorMessage: heightError, keyboardType: .decimalPad)
-                                    .onChange(of: height) { newValue in
-                                        _ = validate(value: newValue, in: 0...300, errorState: $heightError, fieldName: "Height")
+                            HStack(spacing: 6){
+                                Step1InputField(title: "T3 Secretion (0–125%)*", value: $t3Secretion, errorMessage: t3SecretionError, keyboardType: .decimalPad)
+                                    .onChange(of: t3Secretion) { newValue in
+                                        let isValid = validate(value: newValue, in: 0...125, errorState: $t3SecretionError, fieldName: "T3 Secretion")
+                                        if isValid && !isSyncing {
+                                            isSyncing = true
+                                            t4Secretion = newValue
+                                            isSyncing = false
+                                        }
                                     }
-                                Picker("Unit", selection: $selectedHeightUnit) {
-                                    ForEach(heightUnits, id: \.self) { Text($0) }
-                                }
-                                .pickerStyle(SegmentedPickerStyle())
-                                .frame(width: 150)
-                                .background(Color.gray.opacity(0.6))
-                                .cornerRadius(8)
-                            }.padding(.horizontal)
-
-                            HStack {
-                                Step1InputField(title: "Weight", value: $weight, errorMessage: weightError, keyboardType: .decimalPad)
-                                    .onChange(of: weight) { newValue in
-                                        _ = validate(value: newValue, in: 0...1000, errorState: $weightError, fieldName: "Weight")
+                                
+                                Step1InputField(title: "T3 Absorption (0–100%)", value: $t3Absorption, errorMessage: t3AbsorptionError, keyboardType: .decimalPad)
+                                    .onChange(of: t3Absorption) { newValue in
+                                        _ = validate(value: newValue, in: 0...100, errorState: $t3AbsorptionError, fieldName: "T3 Absorption")
                                     }
-                                Picker("Unit", selection: $selectedWeightUnit) {
-                                    ForEach(weightUnits, id: \.self) { Text($0) }
+                            }
+                            
                                 }
-                                .pickerStyle(SegmentedPickerStyle())
-                                .frame(width: 150)
-                                .background(Color.gray.opacity(0.6))
-                                .cornerRadius(8)
-                            }.padding(.horizontal)
 
+
+                            HStack(alignment: .top, spacing: 15) {
+                                
+                                // 1. Gender Section
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text("Sex")
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.7))
+                                    Picker("Gender", selection: $selectedGender) {
+                                        Text("M").tag("MALE")
+                                        Text("F").tag("FEMALE")
+                                    }
+                                    .pickerStyle(SegmentedPickerStyle())
+                                    .frame(width: 80) // Fixed width to save space
+                                }
+                                
+                                // 2. Height Section
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text("Height")
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.7))
+                                    
+                                    HStack(spacing: 5) {
+                                        TextField("0", text: $height)
+                                            .keyboardType(.decimalPad)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.vertical, 8)
+                                            .background(Color.white.opacity(0.1))
+                                            .cornerRadius(5)
+                                            .onChange(of: height) { newValue in
+                                                _ = validate(value: newValue, in: 0...300, errorState: $heightError, fieldName: "Height")
+                                            }
+                                        
+                                        // Tappable Unit Toggle
+                                        Button(action: {
+                                            selectedHeightUnit = (selectedHeightUnit == "cm") ? "in" : "cm"
+                                        }) {
+                                            Text(selectedHeightUnit)
+                                                .font(.caption).bold()
+                                                .frame(width: 30)
+                                                .padding(.vertical, 8)
+                                                .background(Color.blue.opacity(0.6))
+                                                .foregroundColor(.white)
+                                                .cornerRadius(5)
+                                        }
+                                    }
+                                    if let error = heightError { // Error Message display
+                                        Text(error).font(.system(size: 8)).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                                
+                                // 3. Weight Section
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text("Weight")
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.7))
+                                    
+                                    HStack(spacing: 5) {
+                                        TextField("0", text: $weight)
+                                            .keyboardType(.decimalPad)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.vertical, 8)
+                                            .background(Color.white.opacity(0.1))
+                                            .cornerRadius(5)
+                                            .onChange(of: weight) { newValue in
+                                                _ = validate(value: newValue, in: 0...1000, errorState: $weightError, fieldName: "Weight")
+                                            }
+                                        
+                                        // Tappable Unit Toggle
+                                        Button(action: {
+                                            selectedWeightUnit = (selectedWeightUnit == "kg") ? "lb" : "kg"
+                                        }) {
+                                            Text(selectedWeightUnit)
+                                                .font(.caption).bold()
+                                                .frame(width: 30)
+                                                .padding(.vertical, 8)
+                                                .background(Color.blue.opacity(0.6))
+                                                .foregroundColor(.white)
+                                                .cornerRadius(5)
+                                        }
+                                    }
+                                    if let error = weightError { // Error Message display
+                                        Text(error).font(.system(size: 8)).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                            }
                             Step1InputField(title: "Simulation Interval (days <= 100)", value: $simulationDays, errorMessage: simulationDaysError, keyboardType: .numberPad)
                                 .onChange(of: simulationDays) { newValue in
                                     _ = validate(value: newValue, in: 1...100, errorState: $simulationDaysError, fieldName: "Simulation Interval")
@@ -146,7 +198,8 @@ struct Step1View: View {
                             .foregroundColor(.white)
                             .padding(.bottom, 30)
                     }
-                    .padding()
+                    .padding(.horizontal, 20)
+                    .padding(.top)
                 }
                 .background(Color.black.ignoresSafeArea())
                 .navigationTitle("Step 1")
@@ -194,7 +247,7 @@ struct Step1InputField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.callout)
+                .font(.subheadline)
                 .foregroundColor(.white)
             TextField("Enter value", text: $value)
                 .keyboardType(keyboardType)
@@ -212,7 +265,6 @@ struct Step1InputField: View {
                     .padding(.leading, 5)
             }
         }
-        .padding(.horizontal)
     }
 }
 
