@@ -43,6 +43,27 @@ struct Run3View: View {
                             Text("Run 3 Dosing Input")
                                 .font(.title2.bold())
                                 .foregroundColor(.white)
+                            
+                            Button(action: { runSimulationAndNavigate() }) {
+                                HStack {
+                                    if isSimulating {
+                                        ProgressView().tint(.white)
+                                            .padding(.trailing, 5)
+                                    }
+                                    Text(isSimulating ? "SIMULATING..." : "SIMULATE DOSING")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                }
+                                .padding(.vertical, 15)
+                                .padding(.horizontal, 40)
+                                .background(Color.blue)
+                                .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.purple, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                )
+                            }
+                            .disabled(isSimulating)
 
                             HStack(alignment: .top, spacing: 40) {
                                 VStack(alignment: .center, spacing: 16) {
@@ -77,15 +98,7 @@ struct Run3View: View {
                             if !simulationData.run3T4ivinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4IV, title: "T4-IV DOSE (Run 3)", imageName: "syringe2", onDelete: { simulationData.run3T4ivinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4IVDoseInput), ("Start Day", d.T4IVDoseStart)], onDelete: del) } }
                             if !simulationData.run3T4infusioninputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4Infusion, title: "T4-INFUSION DOSE (Run 3)", imageName: "infusion2", onDelete: { simulationData.run3T4infusioninputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4InfusionDoseInput), ("Start Day", d.T4InfusionDoseStart), ("End Day", d.T4InfusionDoseEnd)], onDelete: del) } }
 
-                            Button(action: { runSimulationAndNavigate() }) {
-                                HStack {
-                                    Spacer()
-                                    if isSimulating { ProgressView() } else { Text("Simulate Dosing").fontWeight(.bold) }
-                                    Spacer()
-                                }
-                            }
-                            .disabled(isSimulating)
-                            .padding()
+                            Spacer().frame(height: 50)
                         }
                         .padding()
                     }
