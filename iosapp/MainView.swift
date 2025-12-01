@@ -26,7 +26,6 @@ struct MainView: View {
         .background(Color.black.ignoresSafeArea(.all))
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
-            // Optional: force Intro on launch
             selectedTab = 0
             LaunchResetManager.resetOnColdLaunch(simulationData: simulationData)
         }
@@ -42,24 +41,35 @@ struct MainView: View {
         }
     }
 
+    private var shouldShowResetButton: Bool {
+        selectedTab != 0
+    }
+
     private var resetButtonView: some View {
         HStack {
             Spacer()
-            Button(action: {
-                showingResetAlert = true
-            }) {
-                HStack {
-                    Image(systemName: "arrow.counter.clockwise")
-                    Text("Reset All")
+
+            if shouldShowResetButton {
+                Button(action: {
+                    showingResetAlert = true
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 13, weight: .semibold))
+
+                        Text("RESET ALL")
+                            .font(.system(size: 13, weight: .bold))
+                            .kerning(0.3)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Color.red)
-                .foregroundColor(.white)
-                .cornerRadius(8)
+                .padding(.trailing, 16)
+                .padding(.top, 8)
             }
-            .padding(.trailing, 16)
-            .padding(.top, 8)
         }
         .background(Color.black)
     }
