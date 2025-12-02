@@ -47,6 +47,12 @@ struct Run4View: View {
                                 .font(.title2.bold())
                                 .foregroundColor(.white)
                             
+                            Toggle(isOn: $isInitialConditionsOn) {
+                                Text("Recalculate Initial Conditions")
+                                    .foregroundColor(.white)
+                            }
+                            .toggleStyle(SwitchToggleStyle(tint: .red))
+                            
                             // Simulation Button (Top)
                             Button(action: { runSimulationAndNavigate() }) {
                                 HStack {
