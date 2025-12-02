@@ -63,11 +63,11 @@ struct Step1View: View {
                         .foregroundColor(.white)
                         .padding(.top)
                     
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Normal euthyroid defaults shown")
-                        Text("To simulate hypothyroidism or malabsorption conditions:")
-                        Text("• Change T3/T4 secretion rate SR3/4 of normal)")
-                        Text("• Modify T3/T4 oral absorption from 88%")
+                    VStack(spacing: 6) {
+                        BulletRow(text: "Normal euthyroid defaults shown")
+                        BulletRow(text: "To simulate hypothyroidism or malabsorption \nconditions:")
+                        BulletRow(text: "Change T3/T4 secretion rate SR3/4 \n(% of normal)")
+                        BulletRow(text: "Modify T3/T4 oral absorption from 88%")
                     }
                     .font(.subheadline)
                     .foregroundColor(.white)
@@ -225,7 +225,6 @@ struct Step1View: View {
                             .foregroundColor(.white)
                             .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
                     }
-                    .padding(.bottom)
 
                     Text("*Note: SR3 & SR4 change together & are capped at 125% because model is not validated for hyperthyroid conditions. ")
                         .font(.footnote)

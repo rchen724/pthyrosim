@@ -50,26 +50,6 @@ struct Run3View: View {
                             }
                             .toggleStyle(SwitchToggleStyle(tint: .red))
                             
-                            Button(action: { runSimulationAndNavigate() }) {
-                                HStack {
-                                    if isSimulating {
-                                        ProgressView().tint(.white)
-                                            .padding(.trailing, 5)
-                                    }
-                                    Text(isSimulating ? "SIMULATING..." : "SIMULATE DOSING")
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                }
-                                .padding(.vertical, 15)
-                                .padding(.horizontal, 40)
-                                .background(Color.blue)
-                                .cornerRadius(8)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.purple, style: StrokeStyle(lineWidth: 1, dash: [5]))
-                                )
-                            }
-                            .disabled(isSimulating)
 
                             HStack(alignment: .top, spacing: 20) {
                                 
@@ -101,6 +81,27 @@ struct Run3View: View {
                             .frame(maxWidth: .infinity)
                             .padding(.horizontal)
                             .padding(.bottom, 10)
+                            
+                            Button(action: { runSimulationAndNavigate() }) {
+                                HStack {
+                                    if isSimulating {
+                                        ProgressView().tint(.white)
+                                            .padding(.trailing, 5)
+                                    }
+                                    Text(isSimulating ? "SIMULATING..." : "START SIMULATION")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                }
+                                .padding(.vertical, 15)
+                                .padding(.horizontal, 40)
+                                .background(Color.blue)
+                                .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.purple, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                )
+                            }
+                            .disabled(isSimulating)
 
                             if !simulationData.run3T3oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3Oral, title: "T3-ORAL DOSE (Run 3)", imageName: "pill1", onDelete: { simulationData.run3T3oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3OralDoseInput), ("Start Day", d.T3OralDoseStart)], conditionalDetails: !d.T3SingleDose ? [("End Day", d.T3OralDoseEnd), ("Interval (days)", d.T3OralDoseInterval)] : nil, onDelete: del) } }
                             if !simulationData.run3T3ivinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3IV, title: "T3-IV DOSE (Run 3)", imageName: "syringe1", onDelete: { simulationData.run3T3ivinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3IVDoseInput), ("Start Day", d.T3IVDoseStart)], onDelete: del) } }
@@ -128,12 +129,12 @@ struct Run3View: View {
                 }
             } else {
                 VStack {
-                    Text("Please run the 'Simulate Dosing' (Run 2) simulation first.")
+                    Text("Please run the 'Run 2' simulation first.")
                         .font(.headline)
                         .multilineTextAlignment(.center)
                         .padding()
                 }
-                .navigationTitle("Simulate Dosing")
+                .navigationTitle("START SIMULATION")
             }
         }
         .sheet(item: $activePopup) { popup in
