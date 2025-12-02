@@ -75,32 +75,36 @@ struct Run4View: View {
                             }
                             .disabled(isSimulating)
 
-                            // Input Grid
-                            HStack(alignment: .top, spacing: 40) {
-                                VStack(alignment: .center, spacing: 16) {
+                            HStack(alignment: .top, spacing: 20) {
+                                
+                                VStack(spacing: 8) {
                                     Text("T3 Input:")
-                                        .font(.title3.bold())
+                                        .font(.headline)
                                         .foregroundColor(.white)
-                                    VStack(spacing: 12) {
-                                        Button { activePopup = .T3OralInputs } label: { VStack { Image("pill1"); Text("Oral Dose").font(.headline).foregroundColor(.white) } }
-                                        Button { activePopup = .T3IVInputs } label: { VStack { Image("syringe1"); Text("IV Bolus Dose").font(.headline).foregroundColor(.white) } }
-                                        Button { activePopup = .T3InfusionInputs } label: { VStack { Image("infusion1"); Text("Infusion Dose").font(.headline).foregroundColor(.white) } }
+                                    
+                                    VStack(spacing: 8) {
+                                        compactDoseButton(image: "pill1", text: "Oral", action: { activePopup = .T3OralInputs })
+                                        compactDoseButton(image: "syringe1", text: "IV Bolus", action: { activePopup = .T3IVInputs })
+                                        compactDoseButton(image: "infusion1", text: "Infusion", action: { activePopup = .T3InfusionInputs })
                                     }
                                 }
-
-                                VStack(alignment: .center, spacing: 16) {
+                                
+                                // T4 Column
+                                VStack(spacing: 8) {
                                     Text("T4 Input:")
-                                        .font(.title3.bold())
+                                        .font(.headline)
                                         .foregroundColor(.white)
-                                    VStack(spacing: 12) {
-                                        Button { activePopup = .T4OralInputs } label: { VStack { Image("pill2"); Text("Oral Dose").font(.headline).foregroundColor(.white) } }
-                                        Button { activePopup = .T4IVInputs } label: { VStack { Image("syringe2"); Text("IV Bolus Dose").font(.headline).foregroundColor(.white) } }
-                                        Button { activePopup = .T4InfusionInputs } label: { VStack { Image("infusion2"); Text("Infusion Dose").font(.headline).foregroundColor(.white) } }
+                                    
+                                    VStack(spacing: 8) {
+                                        compactDoseButton(image: "pill2", text: "Oral", action: { activePopup = .T4OralInputs })
+                                        compactDoseButton(image: "syringe2", text: "IV Bolus", action: { activePopup = .T4IVInputs })
+                                        compactDoseButton(image: "infusion2", text: "Infusion", action: { activePopup = .T4InfusionInputs })
                                     }
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .padding()
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
 
                             // Dose Lists
                             if !simulationData.run4T3oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun4T3Oral, title: "T3-ORAL DOSE (Run 4)", imageName: "pill1", onDelete: { simulationData.run4T3oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3OralDoseInput), ("Start Day", d.T3OralDoseStart)], conditionalDetails: !d.T3SingleDose ? [("End Day", d.T3OralDoseEnd), ("Interval (days)", d.T3OralDoseInterval)] : nil, onDelete: del) } }
