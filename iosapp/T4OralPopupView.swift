@@ -23,7 +23,26 @@ struct T4OralPopupView: View {
     @State private var showErrorPopup = false
     @State private var errorMessage = ""
     
+    var doseToEdit: T4OralDose?
     var onSave: (T4OralDose) -> Void
+
+    init(doseToEdit: T4OralDose? = nil, onSave: @escaping (T4OralDose) -> Void) {
+        self.doseToEdit = doseToEdit
+        self.onSave = onSave
+        
+        if let dose = doseToEdit {
+            _T4OralDoseInput = AppStorage(wrappedValue: String(format: "%.1f", dose.T4OralDoseInput), "T4OralDoseInput")
+            _T4OralDoseStart = AppStorage(wrappedValue: String(format: "%.1f", dose.T4OralDoseStart), "T4OralDoseStart")
+            
+            if !dose.T4SingleDose {
+                _T4SingleDose = State(initialValue: false)
+                _T4OralDoseEnd = AppStorage(wrappedValue: String(format: "%.1f", dose.T4OralDoseEnd), "T4OralDoseEnd")
+                _T4OralDoseInterval = AppStorage(wrappedValue: String(format: "%.1f", dose.T4OralDoseInterval), "T4OralDoseInterval")
+            } else {
+                _T4SingleDose = State(initialValue: true)
+            }
+        }
+    }
 
     var body: some View {
         ZStack{

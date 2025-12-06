@@ -82,14 +82,6 @@ struct Run3View: View {
                             .padding(.horizontal)
                             .padding(.bottom, 10)
                             
-
-                            if !simulationData.run3T3oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3Oral, title: "T3-ORAL DOSE (Run 3)", imageName: "pill1", onDelete: { simulationData.run3T3oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3OralDoseInput), ("Start Day", d.T3OralDoseStart)], conditionalDetails: !d.T3SingleDose ? [("End Day", d.T3OralDoseEnd), ("Interval (days)", d.T3OralDoseInterval)] : nil, onDelete: del) } }
-                            if !simulationData.run3T3ivinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3IV, title: "T3-IV DOSE (Run 3)", imageName: "syringe1", onDelete: { simulationData.run3T3ivinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3IVDoseInput), ("Start Day", d.T3IVDoseStart)], onDelete: del) } }
-                            if !simulationData.run3T3infusioninputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3Infusion, title: "T3-INFUSION DOSE (Run 3)", imageName: "infusion1", onDelete: { simulationData.run3T3infusioninputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3InfusionDoseInput), ("Start Day", d.T3InfusionDoseStart), ("End Day", d.T3InfusionDoseEnd)], onDelete: del) } }
-                            if !simulationData.run3T4oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4Oral, title: "T4-ORAL DOSE (Run 3)", imageName: "pill2", onDelete: { simulationData.run3T4oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4OralDoseInput), ("Start Day", d.T4OralDoseStart)], conditionalDetails: !d.T4SingleDose ? [("End Day", d.T4OralDoseEnd), ("Interval (days)", d.T4OralDoseInterval)] : nil, onDelete: del) } }
-                            if !simulationData.run3T4ivinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4IV, title: "T4-IV DOSE (Run 3)", imageName: "syringe2", onDelete: { simulationData.run3T4ivinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4IVDoseInput), ("Start Day", d.T4IVDoseStart)], onDelete: del) } }
-                            if !simulationData.run3T4infusioninputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4Infusion, title: "T4-INFUSION DOSE (Run 3)", imageName: "infusion2", onDelete: { simulationData.run3T4infusioninputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4InfusionDoseInput), ("Start Day", d.T4InfusionDoseStart), ("End Day", d.T4InfusionDoseEnd)], onDelete: del) } }
-
                             Button(action: { runSimulationAndNavigate() }) {
                                 HStack {
                                     if isSimulating {
@@ -110,6 +102,15 @@ struct Run3View: View {
                                 )
                             }
                             .disabled(isSimulating)
+                            
+
+                            if !simulationData.run3T3oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3Oral, title: "T3-ORAL DOSE (Run 3)", imageName: "pill1", onDelete: { simulationData.run3T3oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3OralDoseInput), ("Start Day", d.T3OralDoseStart)], conditionalDetails: !d.T3SingleDose ? [("End Day", d.T3OralDoseEnd), ("Interval (days)", d.T3OralDoseInterval)] : nil, onDelete: del) } }
+                            if !simulationData.run3T3ivinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3IV, title: "T3-IV DOSE (Run 3)", imageName: "syringe1", onDelete: { simulationData.run3T3ivinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3IVDoseInput), ("Start Day", d.T3IVDoseStart)], onDelete: del) } }
+                            if !simulationData.run3T3infusioninputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3Infusion, title: "T3-INFUSION DOSE (Run 3)", imageName: "infusion1", onDelete: { simulationData.run3T3infusioninputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3InfusionDoseInput), ("Start Day", d.T3InfusionDoseStart), ("End Day", d.T3InfusionDoseEnd)], onDelete: del) } }
+                            if !simulationData.run3T4oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4Oral, title: "T4-ORAL DOSE (Run 3)", imageName: "pill2", onDelete: { simulationData.run3T4oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4OralDoseInput), ("Start Day", d.T4OralDoseStart)], conditionalDetails: !d.T4SingleDose ? [("End Day", d.T4OralDoseEnd), ("Interval (days)", d.T4OralDoseInterval)] : nil, onDelete: del) } }
+                            if !simulationData.run3T4ivinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4IV, title: "T4-IV DOSE (Run 3)", imageName: "syringe2", onDelete: { simulationData.run3T4ivinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4IVDoseInput), ("Start Day", d.T4IVDoseStart)], onDelete: del) } }
+                            if !simulationData.run3T4infusioninputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T4Infusion, title: "T4-INFUSION DOSE (Run 3)", imageName: "infusion2", onDelete: { simulationData.run3T4infusioninputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T4InfusionDoseInput), ("Start Day", d.T4InfusionDoseStart), ("End Day", d.T4InfusionDoseEnd)], onDelete: del) } }
+
                             
                             Spacer().frame(height: 50)
                         }

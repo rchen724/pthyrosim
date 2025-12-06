@@ -22,7 +22,26 @@ struct T3OralPopupView: View {
     @State private var showErrorPopup = false
     @State private var errorMessage = ""
     
+    var doseToEdit: T3OralDose?
     var onSave: (T3OralDose) -> Void
+
+    init(doseToEdit: T3OralDose? = nil, onSave: @escaping (T3OralDose) -> Void) {
+        self.doseToEdit = doseToEdit
+        self.onSave = onSave
+        
+        if let dose = doseToEdit {
+            _T3OralDoseInput = AppStorage(wrappedValue: String(format: "%.1f", dose.T3OralDoseInput), "T3OralDoseInput")
+            _T3OralDoseStart = AppStorage(wrappedValue: String(format: "%.1f", dose.T3OralDoseStart), "T3OralDoseStart")
+            
+            if !dose.T3SingleDose {
+                _T3SingleDose = State(initialValue: false)
+                _T3OralDoseEnd = AppStorage(wrappedValue: String(format: "%.1f", dose.T3OralDoseEnd), "T3OralDoseEnd")
+                _T3OralDoseInterval = AppStorage(wrappedValue: String(format: "%.1f", dose.T3OralDoseInterval), "T3OralDoseInterval")
+            } else {
+                _T3SingleDose = State(initialValue: true)
+            }
+        }
+    }
 
     var body: some View {
         ZStack{
@@ -47,9 +66,7 @@ struct T3OralPopupView: View {
                                         .multilineTextAlignment(.leading)
                                         .frame(width: 100, alignment: .trailing)
                                         .keyboardType(.decimalPad)
-                                    
                                 }
-                                
                                 HStack(alignment: .center) {
                                     Text("Dose Start Day or Time")
                                         .frame(width: 150, alignment: .leading)
@@ -59,16 +76,12 @@ struct T3OralPopupView: View {
                                         .multilineTextAlignment(.leading)
                                         .frame(width: 100, alignment: .trailing)
                                         .keyboardType(.decimalPad)
-                                    
+                                   
                                 }
-                                
                                 HStack(alignment: .center) {
-                                    
                                     Toggle("Single Dose", isOn: $T3SingleDose)
                                         .frame(width: 150, alignment: .leading)
-                                    
                                 }
-                                
                                 if !T3SingleDose {
                                     HStack(alignment: .firstTextBaseline) {
                                         VStack(alignment: .leading, spacing: 10) {
@@ -111,7 +124,7 @@ struct T3OralPopupView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.black.edgesIgnoringSafeArea(.all))
-                .navigationTitle("Add T3 Oral Dose")
+                .navigationTitle(doseToEdit != nil ? "Edit T3 Oral Dose" : "Add T3 Oral Dose")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -128,14 +141,14 @@ struct T3OralPopupView: View {
                 .toolbarBackground(Color.black, for: .navigationBar)
                 .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarColorScheme(.dark, for: .navigationBar)
-                
+               
             }
             if showErrorPopup {
                 ZStack {
                     // Dimmed background that covers entire screen
                     Color.black.opacity(0.8)
                         .ignoresSafeArea()
-                    
+                   
                     // Popup itself
                     ErrorPopup(message: errorMessage, onDismiss: {
                         showErrorPopup = false
@@ -155,16 +168,16 @@ struct T3OralPopupView: View {
         let trimmedt3oralstart = T3OralDoseStart.trimmingCharacters(in: .whitespaces)
         let trimmedt3oralend = T3OralDoseEnd.trimmingCharacters(in: .whitespaces)
         let trimmedt3oralinterval = T3OralDoseInterval.trimmingCharacters(in: .whitespaces)
-        
+       
         var singledose  = true
         var t3_end: Float = 0
         var t3_interval: Float = 0
-        
+       
         guard !trimmedt3oralinput.isEmpty else {
             showError("Dosage is required.")
             return
         }
-        
+       
         guard let t3oraldose = Float(trimmedt3oralinput), t3oraldose > 0 else {
             showError("Dosage must be a valid number greater than 0.")
             return
@@ -174,37 +187,37 @@ struct T3OralPopupView: View {
             showError("Start time is required.")
             return
         }
-        
+       
         guard let t3oralstart = Float(trimmedt3oralstart), t3oralstart > 0 else {
             showError("Start time must be a valid number greater than 0.")
             return
         }
 
-        
+       
         if !T3SingleDose {
             guard !trimmedt3oralend.isEmpty else {
                 showError("End time is required if not using single dose.")
                 return
             }
-            
+           
             guard let t3oralend = Float(trimmedt3oralend), t3oralend > 0 else {
                 showError("End time must be a valid number greater than 0.")
                 return
             }
             t3_end = t3oralend
-            
+           
             guard !trimmedt3oralinterval.isEmpty else {
                 showError("Interval is required if not using single dose.")
                 return
             }
-            
+           
             guard let t3oralinterval = Float(trimmedt3oralinterval), t3oralinterval > 0 else {
                 showError("Interval must be a valid number greater than 0.")
                 return
             }
             t3_interval = t3oralinterval
             singledose = false
-            
+           
         }
 
         let newT3OralInput = T3OralDose(T3OralDoseInput: t3oraldose, T3OralDoseStart: t3oralstart, T3OralDoseEnd: t3_end, T3OralDoseInterval: t3_interval, T3SingleDose: singledose)
@@ -219,7 +232,3 @@ struct T3OralPopupView: View {
     }
         
 }
-
-
-
-

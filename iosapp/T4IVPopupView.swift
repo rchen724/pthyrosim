@@ -17,7 +17,18 @@ struct T4IVPopupView: View {
     @State private var showErrorPopup = false
     @State private var errorMessage = ""
     
-    var onSave: (T4IVDose)-> Void
+    var doseToEdit: T4IVDose?
+        var onSave: (T4IVDose)-> Void
+        
+        init(doseToEdit: T4IVDose? = nil, onSave: @escaping (T4IVDose)-> Void) {
+            self.doseToEdit = doseToEdit
+            self.onSave = onSave
+            
+            if let dose = doseToEdit {
+                _T4IVDoseInput = AppStorage(wrappedValue: String(format: "%.1f", dose.T4IVDoseInput), "T4IVDoseInput")
+                _T4IVDoseStart = AppStorage(wrappedValue: String(format: "%.1f", dose.T4IVDoseStart), "T4IVDoseStart")
+            }
+        }
     
     var body: some View {
         ZStack {
