@@ -220,7 +220,7 @@ struct Step1View: View {
                                 .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
                         }
                         .toggleStyle(SwitchToggleStyle(tint: .red))
-                        Text("When this switch is ON, SR3 & SR4 initial conditions (IC) are recalculated to match new inputs. When this switch is OFF, initial conditions are set to euthyroid.")
+                        Text("When this switch is ON, SR3 & SR4 values are recalculated to match new inputs. When the switch is OFF,  SR3 & SR4 values are set to euthyroid (100%)")
                             .font(.caption)
                             .foregroundColor(.white)
                             .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
