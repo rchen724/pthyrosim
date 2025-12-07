@@ -64,8 +64,19 @@ struct Step1View: View {
                         .padding(.top)
                     
                     VStack(spacing: 6) {
-                        BulletRow(text: "Normal euthyroid defaults shown")
-                        BulletRow(text: "To simulate hypothyroidism or malabsorption \nconditions:")
+                        Text("Normal euthyroid defaults shown")
+                            .font(.custom("InputTitle", size: 17))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .minimumScaleFactor(0.5)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        
+                        Text("To simulate hypothyroidism or malabsorption \nconditions:")
+                            .font(.custom("InputTitle", size: 17))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .minimumScaleFactor(0.5)
+                            .frame(maxWidth: .infinity, alignment: .center)
                         BulletRow(text: "Change T3/T4 secretion rate SR3/4 \n(% of normal)")
                         BulletRow(text: "Modify T3/T4 oral absorption from 88%")
                     }
@@ -115,7 +126,7 @@ struct Step1View: View {
                                 Text("Gender")
                                     .font(.subheadline)
                                     .foregroundColor(.white)
-                                    .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
+                                    .fixedSize(horizontal: false, vertical: true)
                                 
                                 Picker("Gender", selection: $selectedGender) {
                                     Text("M").tag("MALE")
@@ -130,7 +141,7 @@ struct Step1View: View {
                                 Text("Height")
                                     .font(.subheadline)
                                     .foregroundColor(.white)
-                                    .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
+                                    .fixedSize(horizontal: false, vertical: true)
                                 
                                 HStack(spacing: 5) {
                                     TextField("0", text: $height)
@@ -160,7 +171,7 @@ struct Step1View: View {
                                 Text("Weight")
                                     .font(.subheadline)
                                     .foregroundColor(.white)
-                                    .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
+                                    .fixedSize(horizontal: false, vertical: true) 
                                 
                                 HStack(spacing: 5) {
                                     TextField("0", text: $weight)
@@ -191,7 +202,7 @@ struct Step1View: View {
                             Text("Simulation Interval (days <= 100)")
                                 .font(.subheadline)
                                 .foregroundColor(.white)
-                                .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
+                                .fixedSize(horizontal: false, vertical: true)
                             
                             TextField("5", text: $simulationDays)
                                 .keyboardType(.numberPad)
@@ -217,20 +228,20 @@ struct Step1View: View {
                             Text("Recalculate Initial Conditions")
                                 .foregroundColor(.white)
                                 .font(.subheadline)
-                                .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .toggleStyle(SwitchToggleStyle(tint: .red))
                         Text("When this switch is ON, SR3 & SR4 values are recalculated to match new inputs. When the switch is OFF,  SR3 & SR4 values are set to euthyroid (100%)")
                             .font(.caption)
                             .foregroundColor(.white)
-                            .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Text("*Note: SR3 & SR4 change together & are capped at 125% because model is not validated for hyperthyroid conditions. ")
                         .font(.footnote)
                         .foregroundColor(.white)
                         .padding(.bottom, 30)
-                        .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     Spacer()
                 }

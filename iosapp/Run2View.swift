@@ -258,53 +258,69 @@ struct Run2View: View {
     }
 
     private func runSimulationAndNavigate() {
-        guard let t4Sec = Double(t4Secretion), let t3Sec = Double(t3Secretion),
-              let t4Abs = Double(t4Absorption), let t3Abs = Double(t3Absorption),
-              let hVal = Double(heightString), let wVal = Double(weightString),
-              var days = Int(simulationDays) else { // Changed to var
-            print("Error: Invalid Run 1 parameters from AppStorage.")
-            return
-        }
+            guard let t4Sec = Double(t4Secretion),
+                  let t3Sec = Double(t3Secretion),
+                  let t4Abs = Double(t4Absorption),
+                  let t3Abs = Double(t3Absorption),
+                  let hVal = Double(heightString),
+                  let wVal = Double(weightString),
+                  var days = Int(simulationDays) else {
+                print("Error: Invalid parameters in Input Page (AppStorage).")
+                return
+            }
 
-        // Calculate 3x the end of the last dosing
-        let maxDosingEnd = calculateMaxDosingEndDay()
-        if maxDosingEnd > 0 { // Only adjust if there are actual doses
-            let newMaxSimulationDays = Int(maxDosingEnd * 3)
-            if newMaxSimulationDays > days {
-                days = newMaxSimulationDays // Update local 'days' variable
-                self.simulationDays = String(newMaxSimulationDays) // Update @AppStorage
+            if simulationData.run1Result?.q_final == nil {
+                print("Warning: No Run 1 result found. Simulation will start from 0/default state.")
+            }
+
+            let maxDosingEnd = calculateMaxDosingEndDay()
+            if maxDosingEnd > 0 {
+                let newMaxSimulationDays = Int(maxDosingEnd * 3)
+                if newMaxSimulationDays > days {
+                    days = newMaxSimulationDays
+                    self.simulationDays = String(newMaxSimulationDays)
+                }
+            }
+            
+            guard !isSimulating else { return }
+            isSimulating = true
+
+            Task {
+                let heightInMeters = (selectedHeightUnit == "cm") ? hVal / 100.0 : ((selectedHeightUnit == "in") ? hVal * 0.0254 : hVal)
+                let weightInKg = (selectedWeightUnit == "lb") ? wVal * 0.453592 : wVal
+                let normalizedGender = selectedGender.uppercased()
+
+                var simulator = ThyroidSimulator(
+                    t4Secretion: t4Sec,
+                    t3Secretion: t3Sec,
+                    t4Absorption: t4Abs,
+                    t3Absorption: t3Abs,
+                    gender: normalizedGender,
+                    height: heightInMeters,
+                    weight: weightInKg,
+                    days: days,
+                    t3OralDoses: simulationData.run2T3oralinputs,
+                    t4OralDoses: simulationData.run2T4oralinputs,
+                    t3IVDoses: simulationData.run2T3ivinputs,
+                    t4IVDoses: simulationData.run2T4ivinputs,
+                    t3InfusionDoses: simulationData.run2T3infusioninputs,
+                    t4InfusionDoses: simulationData.run2T4infusioninputs,
+                    isInitialConditionsOn: false
+                )
+
+                simulator.initialState = simulationData.run1Result?.q_final
+                
+                let result = simulator.runSimulation()
+
+                await MainActor.run {
+                    self.run2Result = result
+                    self.isSimulating = false
+                    self.navigateToGraph = true
+                    self.simulationData.run2Result = result
+                    self.simulationData.previousRun2Results.append(result)
+                }
             }
         }
-       
-        guard !isSimulating else { return }
-        isSimulating = true
-
-        Task {
-            let heightInMeters = (selectedHeightUnit == "cm") ? hVal / 100.0 : ((selectedHeightUnit == "in") ? hVal * 0.0254 : hVal)
-            let weightInKg = (selectedWeightUnit == "lb") ? wVal * 0.453592 : wVal
-            let normalizedGender = selectedGender.uppercased()
-
-            var simulator = ThyroidSimulator(
-                t4Secretion: t4Sec, t3Secretion: t3Sec, t4Absorption: t4Abs, t3Absorption: t3Abs,
-                gender: normalizedGender, height: heightInMeters, weight: weightInKg, days: days,
-                t3OralDoses: simulationData.run2T3oralinputs, t4OralDoses: simulationData.run2T4oralinputs,
-                t3IVDoses: simulationData.run2T3ivinputs, t4IVDoses: simulationData.run2T4ivinputs,
-                t3InfusionDoses: simulationData.run2T3infusioninputs, t4InfusionDoses: simulationData.run2T4infusioninputs,
-                isInitialConditionsOn: false
-            )
-
-            simulator.initialState = simulationData.run1Result?.q_final
-            let result = simulator.runSimulation()
-
-            await MainActor.run {
-                self.run2Result = result
-                self.isSimulating = false
-                self.navigateToGraph = true
-                self.simulationData.run2Result = result
-                self.simulationData.previousRun2Results.append(result)
-            }
-        }
-    }
     
     private func format(dose: T4OralDose) -> String { "Oral T4: \(String(format: "%.1f", dose.T4OralDoseInput))µg" + (dose.T4SingleDose ? " at day \(String(format: "%.1f", dose.T4OralDoseStart))" : " every \(String(format: "%.1f", dose.T4OralDoseInterval)) days") }
     private func format(dose: T4IVDose) -> String { "IV T4: \(String(format: "%.1f", dose.T4IVDoseInput))µg at day \(String(format: "%.1f", dose.T4IVDoseStart))" }
