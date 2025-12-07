@@ -171,7 +171,7 @@ struct Step1View: View {
                                 Text("Weight")
                                     .font(.subheadline)
                                     .foregroundColor(.white)
-                                    .fixedSize(horizontal: false, vertical: true) 
+                                    .fixedSize(horizontal: false, vertical: true)
                                 
                                 HStack(spacing: 5) {
                                     TextField("0", text: $weight)
