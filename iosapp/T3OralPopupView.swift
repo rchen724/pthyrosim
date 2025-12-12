@@ -116,6 +116,8 @@ struct T3OralPopupView: View {
                                             .frame(width: 100, alignment: .trailing)
                                             .keyboardType(.decimalPad)
                                     }
+                                    Text("Save Before Running")
+                                        .font(.headline)
                                 }
                             }
                         }

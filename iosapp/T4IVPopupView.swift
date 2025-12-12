@@ -65,7 +65,8 @@ struct T4IVPopupView: View {
                                     
                                 }
                             
-                                
+                                Text("Save Before Running")
+                                    .font(.headline)
                             }
                         }
 

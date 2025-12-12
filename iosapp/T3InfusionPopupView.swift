@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct T3InfusionPopupView: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) var dismiss
     
     @AppStorage("T3InfusionDoseInput") private var T3InfusionDoseInput: String = ""
     @AppStorage("T3InfusionDoseStart") private var T3InfusionDoseStart: String = ""
@@ -82,7 +82,10 @@ struct T3InfusionPopupView: View {
                                         .multilineTextAlignment(.leading)
                                         .frame(width: 100, alignment: .trailing)
                                 }
-                            
+    
+                                Text("Save Before Running")
+                                    .font(.headline)
+
                                 
                             }
                         }

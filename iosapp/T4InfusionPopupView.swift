@@ -82,7 +82,8 @@ struct T4InfusionPopupView: View {
                                         .multilineTextAlignment(.leading)
                                         .frame(width: 100, alignment: .trailing)
                                 }
-                            
+                                Text("Save Before Running")
+                                    .font(.headline)
                                 
                             }
                         }
