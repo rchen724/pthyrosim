@@ -7,12 +7,11 @@ struct Step1View: View {
     @AppStorage("t3Secretion") private var t3Secretion: String = "100"
     @AppStorage("t3Absorption") private var t3Absorption: String = "88"
     @AppStorage("simulationDays") private var simulationDays: String = "5"
-    @AppStorage("height") private var height: String = "170" // Default height
-    @AppStorage("weight") private var weight: String = "70"   // Default weight
+    @AppStorage("heightCm") private var heightCm: Double = 170.0
+    @AppStorage("weightKg") private var weightKg: Double = 70.0
     @AppStorage("selectedGender") private var selectedGender: String = "FEMALE"
     @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = true
 
-    // New AppStorage for units
     @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "cm"
     @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg"
     
@@ -144,22 +143,40 @@ struct Step1View: View {
                                     .fixedSize(horizontal: false, vertical: true)
                                 
                                 HStack(spacing: 5) {
-                                    TextField("0", text: $height)
-                                        .foregroundColor(Color.white)
-                                        .keyboardType(.decimalPad)
-                                        .multilineTextAlignment(.center)
-                                        .padding(.vertical, 8)
-                                        .background(Color.white.opacity(0.1))
-                                        .cornerRadius(5)
-                                        .onChange(of: height) { newValue in
-                                            _ = validate(value: newValue, in: 0...300, errorState: $heightError, fieldName: "Height")
+                                    TextField("0", text: Binding(
+                                        get: {
+                                            if selectedHeightUnit == "in" {
+                                                return String(format: "%.1f", heightCm / 2.54)
+                                            } else {
+                                                return String(format: "%.1f", heightCm)
+                                            }
+                                        },
+                                        set: { newValue in
+                                            if let doubleValue = Double(newValue.replacingOccurrences(of: ",", with: ".")) {
+                                                if selectedHeightUnit == "in" {
+                                                    heightCm = doubleValue * 2.54
+                                                } else {
+                                                    heightCm = doubleValue
+                                                }
+                                            }
+                                            _ = validate(value: String(heightCm), in: 0...300, errorState: $heightError, fieldName: "Height")
                                         }
+                                    ))
+                                    .foregroundColor(Color.white)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.vertical, 8)
+                                    .background(Color.white.opacity(0.1))
+                                    .cornerRadius(5)
                                     
                                     Picker("Height", selection: $selectedHeightUnit) {
                                         Text("cm").tag("cm")
                                         Text("in").tag("in")
                                     }
                                     .pickerStyle(SegmentedPickerStyle())
+                                    .onChange(of: selectedHeightUnit) { _ in
+                                        _ = validate(value: String(heightCm), in: 0...300, errorState: $heightError, fieldName: "Height")
+                                    }
                                 }
                                 if let error = heightError {
                                     Text(error).font(.system(size: 8)).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
@@ -174,22 +191,40 @@ struct Step1View: View {
                                     .fixedSize(horizontal: false, vertical: true)
                                 
                                 HStack(spacing: 5) {
-                                    TextField("0", text: $weight)
-                                        .foregroundColor(Color.white)
-                                        .keyboardType(.decimalPad)
-                                        .multilineTextAlignment(.center)
-                                        .padding(.vertical, 8)
-                                        .background(Color.white.opacity(0.1))
-                                        .cornerRadius(5)
-                                        .onChange(of: weight) { newValue in
-                                            _ = validate(value: newValue, in: 0...1000, errorState: $weightError, fieldName: "Weight")
+                                    TextField("0", text: Binding(
+                                        get: {
+                                            if selectedWeightUnit == "lb" {
+                                                return String(format: "%.1f", weightKg * 2.20462)
+                                            } else {
+                                                return String(format: "%.1f", weightKg)
+                                            }
+                                        },
+                                        set: { newValue in
+                                            if let doubleValue = Double(newValue.replacingOccurrences(of: ",", with: ".")) {
+                                                if selectedWeightUnit == "lb" {
+                                                    weightKg = doubleValue / 2.20462
+                                                } else {
+                                                    weightKg = doubleValue
+                                                }
+                                            }
+                                            _ = validate(value: String(weightKg), in: 0...1000, errorState: $weightError, fieldName: "Weight")
                                         }
+                                    ))
+                                    .foregroundColor(Color.white)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.vertical, 8)
+                                    .background(Color.white.opacity(0.1))
+                                    .cornerRadius(5)
                                     
                                     Picker("Weight", selection: $selectedWeightUnit) {
                                         Text("kg").tag("kg")
                                         Text("lb").tag("lb")
                                     }
                                     .pickerStyle(SegmentedPickerStyle())
+                                    .onChange(of: selectedWeightUnit) { _ in
+                                        _ = validate(value: String(weightKg), in: 0...1000, errorState: $weightError, fieldName: "Weight")
+                                    }
                                 }
                                 if let error = weightError {
                                     Text(error).font(.system(size: 8)).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
@@ -278,8 +313,8 @@ struct Step1View: View {
         _ = validate(value: t3Secretion, in: 0...125, errorState: $t3SecretionError, fieldName: "T3 Secretion")
         _ = validate(value: t3Absorption, in: 0...100, errorState: $t3AbsorptionError, fieldName: "T3 Absorption")
         _ = validate(value: simulationDays, in: 1...100, errorState: $simulationDaysError, fieldName: "Simulation Interval")
-        _ = validate(value: height, in: 0...300, errorState: $heightError, fieldName: "Height")
-        _ = validate(value: weight, in: 0...1000, errorState: $weightError, fieldName: "Weight")
+        _ = validate(value: String(heightCm), in: 0...300, errorState: $heightError, fieldName: "Height")
+        _ = validate(value: String(weightKg), in: 0...1000, errorState: $weightError, fieldName: "Weight")
     }
 }
 
