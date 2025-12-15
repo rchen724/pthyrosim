@@ -14,10 +14,10 @@ struct T4OralPopupView: View {
     @State private var T4SingleDose = false
 
     
-    @AppStorage("T4OralDoseInput") private var T4OralDoseInput = ""
-    @AppStorage("T4OralDoseStart") private var T4OralDoseStart = ""
-    @AppStorage("T4OralDoseEnd") private var T4OralDoseEnd  = ""
-    @AppStorage("T4OralDoseInterval") private var T4OralDoseInterval = ""
+    @State private var T4OralDoseInput = ""
+    @State private var T4OralDoseStart = ""
+    @State private var T4OralDoseEnd  = ""
+    @State private var T4OralDoseInterval = ""
     
     @State private var inputText = ""
     @State private var showErrorPopup = false
@@ -29,19 +29,6 @@ struct T4OralPopupView: View {
     init(doseToEdit: T4OralDose? = nil, onSave: @escaping (T4OralDose) -> Void) {
         self.doseToEdit = doseToEdit
         self.onSave = onSave
-        
-        if let dose = doseToEdit {
-            _T4OralDoseInput = AppStorage(wrappedValue: String(format: "%.1f", dose.T4OralDoseInput), "T4OralDoseInput")
-            _T4OralDoseStart = AppStorage(wrappedValue: String(format: "%.1f", dose.T4OralDoseStart), "T4OralDoseStart")
-            
-            if !dose.T4SingleDose {
-                _T4SingleDose = State(initialValue: false)
-                _T4OralDoseEnd = AppStorage(wrappedValue: String(format: "%.1f", dose.T4OralDoseEnd), "T4OralDoseEnd")
-                _T4OralDoseInterval = AppStorage(wrappedValue: String(format: "%.1f", dose.T4OralDoseInterval), "T4OralDoseInterval")
-            } else {
-                _T4SingleDose = State(initialValue: true)
-            }
-        }
     }
 
     var body: some View {
@@ -167,6 +154,20 @@ struct T4OralPopupView: View {
                 .background(Color.clear) // Ensure it takes full space
                 .edgesIgnoringSafeArea(.all)
                 .zIndex(1) // Put it on top of everything
+            }
+        }
+        .onAppear(perform: setupInitialValues)
+    }
+    
+    private func setupInitialValues() {
+        if let dose = doseToEdit {
+            T4OralDoseInput = String(format: "%.1f", dose.T4OralDoseInput)
+            T4OralDoseStart = String(format: "%.1f", dose.T4OralDoseStart)
+            T4SingleDose = dose.T4SingleDose
+            
+            if !dose.T4SingleDose {
+                T4OralDoseEnd = String(format: "%.1f", dose.T4OralDoseEnd)
+                T4OralDoseInterval = String(format: "%.1f", dose.T4OralDoseInterval)
             }
         }
     }

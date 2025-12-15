@@ -10,25 +10,20 @@ import SwiftUI
 struct T4IVPopupView: View {
     @Environment(\.dismiss) var dismiss
     
-    @AppStorage("T4IVDoseInput") private var T4IVDoseInput: String = ""
-    @AppStorage("T4IVDoseStart") private var T4IVDoseStart: String = ""
+    @State private var T4IVDoseInput: String = ""
+    @State private var T4IVDoseStart: String = ""
     
     @State private var inputText = ""
     @State private var showErrorPopup = false
     @State private var errorMessage = ""
     
     var doseToEdit: T4IVDose?
-        var onSave: (T4IVDose)-> Void
-        
-        init(doseToEdit: T4IVDose? = nil, onSave: @escaping (T4IVDose)-> Void) {
-            self.doseToEdit = doseToEdit
-            self.onSave = onSave
-            
-            if let dose = doseToEdit {
-                _T4IVDoseInput = AppStorage(wrappedValue: String(format: "%.1f", dose.T4IVDoseInput), "T4IVDoseInput")
-                _T4IVDoseStart = AppStorage(wrappedValue: String(format: "%.1f", dose.T4IVDoseStart), "T4IVDoseStart")
-            }
-        }
+    var onSave: (T4IVDose)-> Void
+
+    init(doseToEdit: T4IVDose? = nil, onSave: @escaping (T4IVDose) -> Void) {
+        self.doseToEdit = doseToEdit
+        self.onSave = onSave
+    }
     
     var body: some View {
         ZStack {
@@ -109,6 +104,14 @@ struct T4IVPopupView: View {
                 .edgesIgnoringSafeArea(.all)
                 .zIndex(1) // Put it on top of everything
             }
+        }
+        .onAppear(perform: setupInitialValues)
+    }
+    
+    private func setupInitialValues() {
+        if let dose = doseToEdit {
+            T4IVDoseInput = String(format: "%.1f", dose.T4IVDoseInput)
+            T4IVDoseStart = String(format: "%.1f", dose.T4IVDoseStart)
         }
     }
     func inputValidation() {

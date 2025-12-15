@@ -93,7 +93,7 @@ struct IntroView: View {
                             }
                             HStack(alignment: .top) {
                                 Text("2.")
-                                Text("JJ DiStefano III et al. Personalized p-THYROSIM model...")
+                                Text("J DiStefano III et al. Front. Endocrinol. 16:1735282. doi: 10.3389/fendo.2025.1735282")
                             }
                         }
                         .font(.caption)

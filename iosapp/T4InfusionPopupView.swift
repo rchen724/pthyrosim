@@ -10,126 +10,128 @@ import SwiftUI
 struct T4InfusionPopupView: View {
     @Environment(\.dismiss) var dismiss
     
-    @AppStorage("T4InfusionDoseInput") private var T4InfusionDoseInput: String = ""
-    @AppStorage("T4InfusionDoseStart") private var T4InfusionDoseStart: String = ""
-    @AppStorage("T4InfusionDoseEnd") private var T4InfusionDoseEnd: String = ""
-    
-    @State private var inputText = ""
-    @State private var showErrorPopup = false
-    @State private var errorMessage = ""
-    
-    var doseToEdit: T4InfusionDose?
-    var onSave: (T4InfusionDose)-> Void
-    
-    init(doseToEdit: T4InfusionDose? = nil, onSave: @escaping (T4InfusionDose)-> Void) {
-        self.doseToEdit = doseToEdit
-        self.onSave = onSave
+        @State private var T4InfusionDoseInput: String = ""
+        @State private var T4InfusionDoseStart: String = ""
+        @State private var T4InfusionDoseEnd: String = ""
         
-        if let dose = doseToEdit {
-            _T4InfusionDoseInput = AppStorage(wrappedValue: String(format: "%.1f", dose.T4InfusionDoseInput), "T4InfusionDoseInput")
-            _T4InfusionDoseStart = AppStorage(wrappedValue: String(format: "%.1f", dose.T4InfusionDoseStart), "T4InfusionDoseStart")
-            _T4InfusionDoseEnd = AppStorage(wrappedValue: String(format: "%.1f", dose.T4InfusionDoseEnd), "T4InfusionDoseEnd")
+        @State private var inputText = ""
+        @State private var showErrorPopup = false
+        @State private var errorMessage = ""
+        
+        var doseToEdit: T4InfusionDose?
+        var onSave: (T4InfusionDose)-> Void
+
+        init(doseToEdit: T4InfusionDose? = nil, onSave: @escaping (T4InfusionDose) -> Void) {
+            self.doseToEdit = doseToEdit
+            self.onSave = onSave
         }
-    }
-    
-    var body: some View {
-        ZStack {
-            NavigationView {
-                Form {
-                    HStack(alignment: .center, spacing: 10) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack(alignment: .center)
-                            {
-                                Image("infusion2")
-                                    .resizable()
-                                    .frame(width: 30, height: 30)
-                                Text("T4-INFUSION DOSE")
-                                    .font(.title3.bold())
-                            }
-                            VStack(alignment: .leading, spacing: 30) {
-                                HStack(alignment: .center) {
-                                    Text("Dose (µg)")
-                                        .frame(width: 150, alignment: .leading)
-                                    Spacer()
-                                    Step2InputField(title: "", value: $T4InfusionDoseInput)
-                                        .multilineTextAlignment(.leading)
-                                        .frame(width: 100, alignment: .trailing)
+        
+        var body: some View {
+            ZStack {
+                NavigationView {
+                    Form {
+                        HStack(alignment: .center, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(alignment: .center)
+                                {
+                                    Image("infusion2")
+                                        .resizable()
+                                        .frame(width: 30, height: 30)
+                                    Text("T4-INFUSION DOSE")
+                                        .font(.title3.bold())
                                 }
-                                
-                                HStack(alignment: .center) {
-                                    Text("Dose Start Day or Time")
-                                        .frame(width: 150, alignment: .leading)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Spacer()
-                                    Step2InputField(title: "", value: $T4InfusionDoseStart)
-                                        .multilineTextAlignment(.leading)
-                                        .frame(width: 100, alignment: .trailing)
+                                VStack(alignment: .leading, spacing: 30) {
+                                    HStack(alignment: .center) {
+                                        Text("Dose (µg)")
+                                            .frame(width: 150, alignment: .leading)
+                                        Spacer()
+                                        Step2InputField(title: "", value: $T4InfusionDoseInput)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(width: 100, alignment: .trailing)
+                                    }
+                                    
+                                    HStack(alignment: .center) {
+                                        Text("Dose Start Day or Time")
+                                            .frame(width: 150, alignment: .leading)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                        Spacer()
+                                        Step2InputField(title: "", value: $T4InfusionDoseStart)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(width: 100, alignment: .trailing)
+                                        
+                                    }
+                                    HStack(alignment: .firstTextBaseline) {
+                                        VStack(alignment: .leading, spacing: 10) {
+                                            Text("Dose End Day or Time")
+                                                .frame(width: 150, alignment: .leading)
+    
+                                            Text("e.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                                .frame(width: 150, alignment: .trailing)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                        Spacer()
+                                        Step2InputField(title: "", value: $T4InfusionDoseEnd)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(width: 100, alignment: .trailing)
+                                    }
+                                    Text("Save Before Running")
+                                        .font(.headline)
                                     
                                 }
-                                HStack(alignment: .firstTextBaseline) {
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        Text("Dose End Day or Time")
-                                            .frame(width: 150, alignment: .leading)
-
-                                        Text("e.g. Start (or End) dosing on Day 3, or Day 0.5 or Day 2.8 etc.")
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                            .frame(width: 150, alignment: .trailing)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    Spacer()
-                                    Step2InputField(title: "", value: $T4InfusionDoseEnd)
-                                        .multilineTextAlignment(.leading)
-                                        .frame(width: 100, alignment: .trailing)
-                                }
-                                Text("Save Before Running")
-                                    .font(.headline)
-                                
+                            }
+    
+                        }
+                        .padding()
+                    }
+                    .scrollContentBackground(.hidden)
+                    .background(Color.black.edgesIgnoringSafeArea(.all))
+                    .navigationTitle("Add T4 Infusion Dose")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                dismiss()
                             }
                         }
-
-                    }
-                    .padding()
-                }
-                .scrollContentBackground(.hidden)
-                .background(Color.black.edgesIgnoringSafeArea(.all))
-                .navigationTitle("Add T4 Infusion Dose")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            dismiss()
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Save") {
+                                inputValidation()
+                            }
                         }
                     }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
-                            inputValidation()
-                        }
+                    .toolbarBackground(Color.black, for: .navigationBar)
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+                }
+                if showErrorPopup {
+                    ZStack {
+                        // Dimmed background that covers entire screen
+                        Color.black.opacity(0.8)
+                            .ignoresSafeArea()
+                        
+                        // Popup itself
+                        ErrorPopup(message: errorMessage, onDismiss: {
+                            showErrorPopup = false
+                        })
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.clear) // Ensure it takes full space
+                    .edgesIgnoringSafeArea(.all)
+                    .zIndex(1) // Put it on top of everything
                 }
-                .toolbarBackground(Color.black, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
-                .toolbarColorScheme(.dark, for: .navigationBar)
             }
-            if showErrorPopup {
-                ZStack {
-                    // Dimmed background that covers entire screen
-                    Color.black.opacity(0.8)
-                        .ignoresSafeArea()
-                    
-                    // Popup itself
-                    ErrorPopup(message: errorMessage, onDismiss: {
-                        showErrorPopup = false
-                    })
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.clear) // Ensure it takes full space
-                .edgesIgnoringSafeArea(.all)
-                .zIndex(1) // Put it on top of everything
-            }
+            .onAppear(perform: setupInitialValues)
         }
-    }
-    
+        
+        private func setupInitialValues() {
+            if let dose = doseToEdit {
+                T4InfusionDoseInput = String(format: "%.1f", dose.T4InfusionDoseInput)
+                T4InfusionDoseStart = String(format: "%.1f", dose.T4InfusionDoseStart)
+                T4InfusionDoseEnd = String(format: "%.1f", dose.T4InfusionDoseEnd)
+            }
+        }    
     func inputValidation() {
         let trimmedt4infusioninput = T4InfusionDoseInput.trimmingCharacters(in: .whitespaces)
         let trimmedt4infusionstart = T4InfusionDoseStart.trimmingCharacters(in: .whitespaces)
