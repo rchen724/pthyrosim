@@ -12,19 +12,20 @@ struct Run3View: View {
     @State private var run3Result: ThyroidSimulationResult? = nil
     @State private var isSimulating = false
     @State private var navigateToGraph = false
-    
+    @State private var showStep1Popup = false
+
     // AppStorage for Run 1 parameters (matching Step1View keys)
-    @AppStorage("t4Secretion") private var t4Secretion = "100"
-    @AppStorage("t3Secretion") private var t3Secretion = "100"
-    @AppStorage("t4Absorption") private var t4Absorption = "88"
-    @AppStorage("t3Absorption") private var t3Absorption = "88"
-    @AppStorage("height") private var height = "170"
-    @AppStorage("weight") private var weight = "70"
-    @AppStorage("selectedHeightUnit") private var selectedHeightUnit = "cm"
-    @AppStorage("selectedWeightUnit") private var selectedWeightUnit = "kg"
-    @AppStorage("selectedGender") private var selectedGender = "FEMALE"
-    @AppStorage("simulationDays") private var simulationDays = "5"
-    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn = true
+    @State private var t4Secretion = "100"
+    @State private var t3Secretion = "100"
+    @State private var t4Absorption = "88"
+    @State private var t3Absorption = "88"
+    @State private var heightString = "170"
+    @State private var weightString = "70"
+    @State private var selectedHeightUnit = "cm"
+    @State private var selectedWeightUnit = "kg"
+    @State private var selectedGender = "FEMALE"
+    @State private var simulationDays = "5"
+    @State private var isInitialConditionsOn = true
 
     // Enumerated input arrays for Run3
     var enumeratedRun3T3Oral: [(Int, T3OralDose)] { Array(simulationData.run3T3oralinputs.enumerated()) }
@@ -82,26 +83,37 @@ struct Run3View: View {
                             .padding(.horizontal)
                             .padding(.bottom, 10)
                             
-                            Button(action: { runSimulationAndNavigate() }) {
-                                HStack {
-                                    if isSimulating {
-                                        ProgressView().tint(.white)
-                                            .padding(.trailing, 5)
-                                    }
-                                    Text(isSimulating ? "SIMULATING..." : "START SIMULATION")
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
+                            HStack(spacing: 20) {
+                                Button("Change Inputs") {
+                                    showStep1Popup = true
                                 }
                                 .padding(.vertical, 15)
-                                .padding(.horizontal, 40)
-                                .background(Color.blue)
+                                .padding(.horizontal, 20)
+                                .background(Color.orange) // Changed color for distinction
+                                .foregroundColor(.white)
                                 .cornerRadius(8)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.purple, style: StrokeStyle(lineWidth: 1, dash: [5]))
-                                )
+                                
+                                Button(action: { runSimulationAndNavigate() }) {
+                                    HStack {
+                                        if isSimulating {
+                                            ProgressView().tint(.white)
+                                                .padding(.trailing, 5)
+                                        }
+                                        Text(isSimulating ? "SIMULATING..." : "START SIMULATION")
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(.vertical, 15)
+                                    .padding(.horizontal, 40)
+                                    .background(Color.blue)
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.purple, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                    )
+                                }
+                                .disabled(isSimulating)
                             }
-                            .disabled(isSimulating)
                             
 
                             if !simulationData.run3T3oralinputs.isEmpty { DoseDisplaySection(doses: enumeratedRun3T3Oral, title: "T3-ORAL DOSE (Run 3)", imageName: "pill1", onDelete: { simulationData.run3T3oralinputs.remove(at: $0) }) { i, d, del in DoseDetailsView(index: i, details: [("Dose (µg)", d.T3OralDoseInput), ("Start Day", d.T3OralDoseStart)], conditionalDetails: !d.T3SingleDose ? [("End Day", d.T3OralDoseEnd), ("Interval (days)", d.T3OralDoseInterval)] : nil, onDelete: del) } }
@@ -139,6 +151,21 @@ struct Run3View: View {
                 .navigationTitle("START SIMULATION")
             }
         }
+        .sheet(isPresented: $showStep1Popup) {
+            Step1PopupView(
+                t4Secretion: $t4Secretion,
+                t4Absorption: $t4Absorption,
+                t3Secretion: $t3Secretion,
+                t3Absorption: $t3Absorption,
+                simulationDays: $simulationDays,
+                heightCm: Binding(get: { Double(heightString) ?? 170.0 }, set: { heightString = String($0) }),
+                weightKg: Binding(get: { Double(weightString) ?? 70.0 }, set: { weightString = String($0) }),
+                selectedGender: $selectedGender,
+                isInitialConditionsOn: $isInitialConditionsOn,
+                selectedHeightUnit: $selectedHeightUnit,
+                selectedWeightUnit: $selectedWeightUnit
+            )
+        }
         .sheet(item: $activePopup) { popup in
             switch popup {
             case .T3OralInputs: T3OralPopupView { dose in simulationData.run3T3oralinputs.append(dose) }
@@ -154,7 +181,7 @@ struct Run3View: View {
     private func runSimulationAndNavigate() {
         guard let t4Sec = Double(t4Secretion), let t3Sec = Double(t3Secretion),
               let t4Abs = Double(t4Absorption), let t3Abs = Double(t3Absorption),
-              let hVal = Double(height), let wVal = Double(weight),
+              let hVal = Double(heightString), let wVal = Double(weightString),
               var days = Int(simulationDays) else { // Changed to var
             print("Error: Invalid Run 1 parameters from AppStorage.")
             return
