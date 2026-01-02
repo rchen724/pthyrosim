@@ -15,8 +15,11 @@ struct Run4GraphView: View {
     @State private var showNormalRange: Bool = true
     @State private var showPreviousRuns: Bool = true
     
-    @State private var pdfURL: URL?
-    @State private var showShareSheet = false
+    private struct ShareableURL: Identifiable {
+        let url: URL
+        let id = UUID()
+    }
+    @State private var pdfSheetItem: ShareableURL?
     @Environment(\.presentationMode) var presentationMode
 
     // AppStorage variables to retrieve simulation conditions
@@ -253,23 +256,17 @@ struct Run4GraphView: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    // --- CORRECTED BUTTON ACTION ---
-                    // Use a Task to run the async PDF rendering
                     Task {
-                        // 'await' waits for the function to finish and return the URL
                         let url = await renderViewToPDF(view: viewToRender)
-                        self.pdfURL = url
-                        self.showShareSheet = true
+                        self.pdfSheetItem = ShareableURL(url: url)
                     }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
             }
         }
-        .sheet(isPresented: $showShareSheet) {
-            if let pdfURL {
-                ShareSheet(activityItems: [pdfURL])
-            }
+        .sheet(item: $pdfSheetItem) { item in
+            ShareSheet(items: [item.url])
         }
     }
     

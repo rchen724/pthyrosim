@@ -14,8 +14,11 @@ struct SimulationGraphView: View {
     @State private var showNormalRange: Bool = true
     
     // ----- PDF Export -----
-    @State private var pdfURL: URL?
-    @State private var showShareSheet = false
+    private struct ShareableURL: Identifiable {
+        let url: URL
+        let id = UUID()
+    }
+    @State private var pdfSheetItem: ShareableURL?
     @Environment(\.presentationMode) var presentationMode
     
     // AppStorage variables
@@ -177,18 +180,15 @@ struct SimulationGraphView: View {
                 Button {
                     Task {
                         let url = await renderViewToPDF(view: viewToRender)
-                        self.pdfURL = url
-                        self.showShareSheet = true
+                        self.pdfSheetItem = ShareableURL(url: url)
                     }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
             }
         }
-        .sheet(isPresented: $showShareSheet) {
-            if let pdfURL {
-                ShareSheet(activityItems: [pdfURL])
-            }
+        .sheet(item: $pdfSheetItem) { item in
+            ShareSheet(items: [item.url])
         }
     }
 

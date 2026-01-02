@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 // MARK: - Drop-in activity sheet
-struct ActivitySheet: UIViewControllerRepresentable {
+struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
@@ -54,7 +54,7 @@ struct ShareSheetSmokeTestView: View {
         .padding()
         .sheet(isPresented: $show) {
             if let url {
-                ActivitySheet(items: [url])              // 3) share *file URL*
+                ShareSheet(items: [url])              // 3) share *file URL*
             } else {
                 Text("Preparing…").padding()
             }
