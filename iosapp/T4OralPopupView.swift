@@ -14,16 +14,22 @@ struct T4OralPopupView: View {
     @State private var T4SingleDose = false
 
     
-    @AppStorage("T4OralDoseInput") private var T4OralDoseInput = ""
-    @AppStorage("T4OralDoseStart") private var T4OralDoseStart = ""
-    @AppStorage("T4OralDoseEnd") private var T4OralDoseEnd  = ""
-    @AppStorage("T4OralDoseInterval") private var T4OralDoseInterval = ""
+    @State private var T4OralDoseInput = ""
+    @State private var T4OralDoseStart = ""
+    @State private var T4OralDoseEnd  = ""
+    @State private var T4OralDoseInterval = ""
     
     @State private var inputText = ""
     @State private var showErrorPopup = false
     @State private var errorMessage = ""
     
+    var doseToEdit: T4OralDose?
     var onSave: (T4OralDose) -> Void
+
+    init(doseToEdit: T4OralDose? = nil, onSave: @escaping (T4OralDose) -> Void) {
+        self.doseToEdit = doseToEdit
+        self.onSave = onSave
+    }
 
     var body: some View {
         ZStack{
@@ -64,12 +70,10 @@ struct T4OralPopupView: View {
                                 }
                                 
                                 HStack(alignment: .center) {
-                                    Text("Use Single Dose")
                                     
-                                    Toggle("turn off", isOn: $T4SingleDose)
-                                        .labelsHidden()
-                                        .toggleStyle(SwitchToggleStyle(tint: .blue))
-                                        .frame(width: 100, alignment: .trailing)
+                                    Toggle("Single Dose", isOn: $T4SingleDose)
+                                        .frame(width: 150, alignment: .leading)
+                                    
                                 }
                                 
                                 if !T4SingleDose {
@@ -106,6 +110,8 @@ struct T4OralPopupView: View {
                                             .frame(width: 100, alignment: .trailing)
                                             .keyboardType(.decimalPad)
                                     }
+                                    Text("Save Before Running")
+                                        .font(.headline)
                                 }
                             }
                         }
@@ -148,6 +154,20 @@ struct T4OralPopupView: View {
                 .background(Color.clear) // Ensure it takes full space
                 .edgesIgnoringSafeArea(.all)
                 .zIndex(1) // Put it on top of everything
+            }
+        }
+        .onAppear(perform: setupInitialValues)
+    }
+    
+    private func setupInitialValues() {
+        if let dose = doseToEdit {
+            T4OralDoseInput = String(format: "%.1f", dose.T4OralDoseInput)
+            T4OralDoseStart = String(format: "%.1f", dose.T4OralDoseStart)
+            T4SingleDose = dose.T4SingleDose
+            
+            if !dose.T4SingleDose {
+                T4OralDoseEnd = String(format: "%.1f", dose.T4OralDoseEnd)
+                T4OralDoseInterval = String(format: "%.1f", dose.T4OralDoseInterval)
             }
         }
     }

@@ -1,25 +1,18 @@
 import SwiftUI
 
-struct Step1View: View {
-    // AppStorage variables to store user input
-    @AppStorage("t4Secretion") private var t4Secretion: String = "100"
-    @AppStorage("t4Absorption") private var t4Absorption: String = "88"
-    @AppStorage("t3Secretion") private var t3Secretion: String = "100"
-    @AppStorage("t3Absorption") private var t3Absorption: String = "88"
-    @AppStorage("simulationDays") private var simulationDays: String = "5"
-    @AppStorage("heightCm") private var heightCm: Double = 170.0
-    @AppStorage("weightKg") private var weightKg: Double = 70.0
-    @AppStorage("selectedGender") private var selectedGender: String = "FEMALE"
-    @AppStorage("isInitialConditionsOn") private var isInitialConditionsOn: Bool = true
+struct Step1PopupView: View {
+    @Binding var t4Secretion: String
+    @Binding var t4Absorption: String
+    @Binding var t3Secretion: String
+    @Binding var t3Absorption: String
+    @Binding var simulationDays: String
+    @Binding var heightCm: Double
+    @Binding var weightKg: Double
+    @Binding var selectedGender: String
+    @Binding var isInitialConditionsOn: Bool
+    @Binding var selectedHeightUnit: String
+    @Binding var selectedWeightUnit: String
 
-    @AppStorage("selectedHeightUnit") private var selectedHeightUnit: String = "cm"
-    @AppStorage("selectedWeightUnit") private var selectedWeightUnit: String = "kg"
-    
-    @State private var scrollOffset: CGFloat = 0
-    @State private var contentHeight: CGFloat = 1
-    @State private var scrollViewHeight: CGFloat = 1
-
-    // Input validation state
     @State private var t4SecretionError: String?
     @State private var t4AbsorptionError: String?
     @State private var t3SecretionError: String?
@@ -32,56 +25,19 @@ struct Step1View: View {
     let genders = ["MALE", "FEMALE"]
     let heightUnits = ["cm", "in"]
     let weightUnits = ["lb", "kg"]
-    
-    init() {
-        UISegmentedControl.appearance().backgroundColor = UIColor.white.withAlphaComponent(0.1)
-        
-        UISegmentedControl.appearance().selectedSegmentTintColor = UIColor.lightGray
-        
-        UISegmentedControl.appearance().setTitleTextAttributes(
-            [.foregroundColor: UIColor.white], for: .selected
-        )
-        
-        UISegmentedControl.appearance().setTitleTextAttributes(
-            [.foregroundColor: UIColor.white.withAlphaComponent(0.7)], for: .normal
-        )
-    }
+
+    @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
         NavigationView {
             ZStack(alignment: .top) {
-                
-                // Background Layer
                 Color.black.ignoresSafeArea()
-                
-                // Content Layer
                 VStack(spacing: 15) {
                     Text("Enter Simulation Conditions")
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
                         .padding(.top)
-                    
-                    VStack(spacing: 6) {
-                        Text("Normal euthyroid defaults shown")
-                            .font(.custom("InputTitle", size: 17))
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                            .minimumScaleFactor(0.5)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        
-                        Text("To simulate hypothyroidism or malabsorption \nconditions:")
-                            .font(.custom("InputTitle", size: 17))
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                            .minimumScaleFactor(0.5)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        BulletRow(text: "Change T3/T4 secretion rate SR3/4 \n(% of normal)")
-                        BulletRow(text: "Modify T3/T4 oral absorption from 88%")
-                    }
-                    .font(.subheadline)
-                    .foregroundColor(.white)
-                    .fixedSize(horizontal: false, vertical: true) // Allow description to wrap
 
                     Group {
                         HStack(spacing: 6){
@@ -232,7 +188,6 @@ struct Step1View: View {
                             }
                         }
                         
-                        // Simulation Interval Section
                         VStack(alignment: .leading, spacing: 5) {
                             Text("Simulation Interval (days <= 100)")
                                 .font(.subheadline)
@@ -257,7 +212,6 @@ struct Step1View: View {
                         }
                     }
 
-                    // Toggle Section
                     VStack(alignment: .leading, spacing: 4) {
                         Toggle(isOn: $isInitialConditionsOn) {
                             Text("Recalculate Initial Conditions")
@@ -266,24 +220,18 @@ struct Step1View: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .toggleStyle(SwitchToggleStyle(tint: .red))
-                        Text("When this switch is ON, SR3 & SR4 values are recalculated to match new inputs. When the switch is OFF,  SR3 & SR4 values are set to euthyroid (100%)")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    Text("*Note: SR3 & SR4 change together & are capped at 125% because model is not validated for hyperthyroid conditions. ")
-                        .font(.footnote)
-                        .foregroundColor(.white)
-                        .padding(.bottom, 30)
-                        .fixedSize(horizontal: false, vertical: true)
-                    
+                    Button("Done") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .padding()
+
                     Spacer()
                 }
                 .padding(.horizontal, 20)
                 .padding(.top)
             }
-            .navigationTitle("Step 1")
             .navigationBarHidden(true)
         }
         .onAppear(perform: validateAllFields)
@@ -315,62 +263,5 @@ struct Step1View: View {
         _ = validate(value: simulationDays, in: 1...100, errorState: $simulationDaysError, fieldName: "Simulation Interval")
         _ = validate(value: String(heightCm), in: 0...300, errorState: $heightError, fieldName: "Height")
         _ = validate(value: String(weightKg), in: 0...1000, errorState: $weightError, fieldName: "Weight")
-    }
-}
-
-struct Step1InputField: View {
-    var title: String
-    @Binding var value: String
-    var errorMessage: String?
-    var keyboardType: UIKeyboardType = .default
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundColor(.white)
-                .fixedSize(horizontal: false, vertical: true) // 👈 Allows wrapping vertically
-            
-            TextField("Enter value", text: $value)
-                .keyboardType(keyboardType)
-                .padding(10)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(8)
-                .foregroundColor(errorMessage == nil ? .white : .red)
-                .autocorrectionDisabled(true)
-                .textInputAutocapitalization(.never)
-            
-            if let errorMessage = errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundColor(.red)
-                    .padding(.leading, 5)
-                    .fixedSize(horizontal: false, vertical: true) // 👈 Allows error message to wrap
-            }
-        }
-    }
-}
-
-struct CustomSegmentedPicker: View {
-    @Binding var selection: String
-    let options: [String]
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(options, id: \.self) { option in
-                Button(action: {
-                    selection = option
-                }) {
-                    Text(option)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(selection == option ? .white : .gray)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(selection == option ? Color.blue : Color.gray.opacity(0.4))
-                        .cornerRadius(8)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
     }
 }

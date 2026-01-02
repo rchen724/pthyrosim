@@ -18,6 +18,8 @@ struct GraphSection: View {
     let secondaryColor: Color?
     let tertiaryValues: [(Double, Double)]?
     let tertiaryColor: Color?
+    let quaternaryValues: [(Double, Double)]?
+    let quaternaryColor: Color?
     /// Parent-provided ranges (kept as hints); we’ll expand them to fit all series.
     let yAxisRange: ClosedRange<Double>
     let xAxisRange: ClosedRange<Double>
@@ -35,8 +37,9 @@ struct GraphSection: View {
         values: [(Double, Double)], color: Color,
         secondaryValues: [(Double, Double)]? = nil, secondaryColor: Color? = nil,
         tertiaryValues: [(Double, Double)]? = nil,   tertiaryColor: Color? = nil,
+        quaternaryValues: [(Double, Double)]? = nil, quaternaryColor: Color? = nil,
         yAxisRange: ClosedRange<Double>, xAxisRange: ClosedRange<Double>,
-        height: CGFloat = 150,
+        height: CGFloat = 120,
         lineWidth: CGFloat = 1.2,
         showNormalRange: Binding<Bool>,
         chartHeight: CGFloat = 250
@@ -50,6 +53,8 @@ struct GraphSection: View {
         self.secondaryColor = secondaryColor
         self.tertiaryValues = tertiaryValues
         self.tertiaryColor = tertiaryColor
+        self.quaternaryValues = quaternaryValues
+        self.quaternaryColor = quaternaryColor
         self._showNormalRange = showNormalRange
         self.yAxisRange = yAxisRange
         self.xAxisRange = xAxisRange
@@ -58,8 +63,8 @@ struct GraphSection: View {
         self.chartHeight = chartHeight
 
         // ---- Auto-expand domains to include ALL series (prevents Run 1 clipping) ----
-        let combinedXMinMax = GraphSection.combinedMinMaxX(values: values, s: secondaryValues, t: tertiaryValues)
-        let combinedYMinMax = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues)
+        let combinedXMinMax = GraphSection.combinedMinMaxX(values: values, s: secondaryValues, t: tertiaryValues, q: quaternaryValues)
+        let combinedYMinMax = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues, q: quaternaryValues)
 
         // Start X at 0 and extend to cover parent hint OR combined data (whichever is larger)
         let initialXUpper = max(xAxisRange.upperBound, combinedXMinMax.max ?? xAxisRange.upperBound)
@@ -79,22 +84,26 @@ struct GraphSection: View {
     private static func combinedMinMaxX(
         values: [(Double, Double)],
         s: [(Double, Double)]?,
-        t: [(Double, Double)]?
+        t: [(Double, Double)]?,
+        q: [(Double, Double)]?
     ) -> (min: Double?, max: Double?) {
         var xs: [Double] = values.map { $0.0 }
         if let s = s { xs.append(contentsOf: s.map { $0.0 }) }
         if let t = t { xs.append(contentsOf: t.map { $0.0 }) }
+        if let q = q { xs.append(contentsOf: q.map { $0.0 }) }
         return (xs.min(), xs.max())
     }
 
     private static func combinedMinMaxY(
         values: [(Double, Double)],
         s: [(Double, Double)]?,
-        t: [(Double, Double)]?
+        t: [(Double, Double)]?,
+        q: [(Double, Double)]?
     ) -> (min: Double?, max: Double?) {
         var ys: [Double] = values.map { $0.1 }
         if let s = s { ys.append(contentsOf: s.map { $0.1 }) }
         if let t = t { ys.append(contentsOf: t.map { $0.1 }) }
+        if let q = q { ys.append(contentsOf: q.map { $0.1 }) }
         return (ys.min(), ys.max())
     }
 
@@ -103,6 +112,7 @@ struct GraphSection: View {
         for (x, y) in values { data.append(.init(x: x, y: y, series: "Current")) }
         if let s = secondaryValues { for (x, y) in s { data.append(.init(x: x, y: y, series: "Secondary")) } }
         if let t = tertiaryValues  { for (x, y) in t { data.append(.init(x: x, y: y, series: "Tertiary")) } }
+        if let q = quaternaryValues  { for (x, y) in q { data.append(.init(x: x, y: y, series: "Quaternary")) } }
         return data
     }
 
@@ -172,12 +182,14 @@ struct GraphSection: View {
                     .chartForegroundStyleScale([
                         "Current": color,
                         "Secondary": (secondaryColor ?? .red.opacity(0.8)),
-                        "Tertiary": (tertiaryColor ?? .purple.opacity(0.8))
+                        "Tertiary": (tertiaryColor ?? .purple.opacity(0.8)),
+                        "Quaternary": (quaternaryColor ?? .orange.opacity(0.8))
                     ])
                     .chartLineStyleScale([
                         "Current": StrokeStyle(lineWidth: lineWidth),
                         "Secondary": StrokeStyle(lineWidth: max(0.9, lineWidth - 0.3)),
-                        "Tertiary": StrokeStyle(lineWidth: max(0.8, lineWidth - 0.4))
+                        "Tertiary": StrokeStyle(lineWidth: max(0.8, lineWidth - 0.4)),
+                        "Quaternary": StrokeStyle(lineWidth: max(0.7, lineWidth - 0.5))
                     ])
                     // Y: max 10 ticks
                     .chartYAxis {
@@ -223,8 +235,9 @@ struct GraphSection: View {
             }
         }
         // If the parent recomputes yAxisRange (e.g., after data update), re-expand to keep all lines visible
+        // If the parent recomputes yAxisRange (e.g., after data update), re-expand to keep all lines visible
         .onChange(of: yAxisRange) { _, _ in
-            let combinedY = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues)
+            let combinedY = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues, q: quaternaryValues)
             let minY = min(yAxisRange.lowerBound, combinedY.min ?? yAxisRange.lowerBound)
             let maxY = max(yAxisRange.upperBound, combinedY.max ?? yAxisRange.upperBound)
             currentYDomain = min(0, minY)...max(min(0, minY) + 1, maxY)
@@ -238,23 +251,43 @@ struct GraphSection: View {
         if forceZeroBaseline { lo = min(0, lo) }
 
         let range = hi - lo
-        guard range > 0, maxTicks > 1 else { return [lo] }
+        guard range > 0 else {
+            // For a zero or negative range, return bounds if meaningful, otherwise a default small range
+            return [lo, lo + (lo == 0 ? 1 : abs(lo * 0.1))] // Ensure at least two distinct points
+        }
+        
+        let effectiveMaxTicks = max(2, maxTicks) // Ensure at least 2 ticks always
 
-        let rawStep = range / Double(maxTicks - 1)
+        let rawStep = range / Double(effectiveMaxTicks - 1)
         let step = niceStep(rawStep)
         let niceLo = floor(lo / step) * step
         let niceHi = ceil(hi / step) * step
 
         var vals: [Double] = []
         var v = niceLo
-        while v <= niceHi + step * 1e-6 {
+        while v <= niceHi + step * 1e-6 { // Add a small epsilon to handle floating point inaccuracies
             vals.append(v)
             v += step
         }
-        if vals.count > maxTicks {
-            let strideBy = Int(ceil(Double(vals.count) / Double(maxTicks)))
+        
+        // If still too many values (e.g., due to nice step increasing count), thin them out.
+        // But ensure we always keep at least 'effectiveMaxTicks' (or all if fewer)
+        if vals.count > effectiveMaxTicks {
+            let strideBy = Int(ceil(Double(vals.count) / Double(effectiveMaxTicks)))
             vals = vals.enumerated().compactMap { idx, val in idx % strideBy == 0 ? val : nil }
         }
+        
+        // Ensure at least two values if the domain allows (i.e., range > 0)
+        if vals.count < 2 && range > 0 {
+            if !vals.contains(lo) { vals.insert(lo, at: 0) }
+            if !vals.contains(hi) { vals.append(hi) }
+            if vals.count == 1 { // If only one value, add another near it
+                if lo == 0 { vals.append(1) } else { vals.append(lo + (lo * 0.1)) }
+            }
+            vals.sort()
+            vals = Array(Set(vals)).sorted() // Remove duplicates and sort again
+        }
+        
         return vals
     }
 
@@ -294,8 +327,8 @@ struct GraphSection: View {
 
     private func resetZoomAndPan() {
         // Rebuild union domains on reset as well
-        let combinedX = GraphSection.combinedMinMaxX(values: values, s: secondaryValues, t: tertiaryValues)
-        let combinedY = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues)
+        let combinedX = GraphSection.combinedMinMaxX(values: values, s: secondaryValues, t: tertiaryValues, q: quaternaryValues)
+        let combinedY = GraphSection.combinedMinMaxY(values: values, s: secondaryValues, t: tertiaryValues, q: quaternaryValues)
 
         let xUpper = max(xAxisRange.upperBound, combinedX.max ?? xAxisRange.upperBound)
         currentXDomain = 0...max(5, xUpper)
