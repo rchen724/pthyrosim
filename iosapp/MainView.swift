@@ -90,10 +90,10 @@ struct MainView: View {
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: tabs[index].icon)
-                            .font(.system(size: 14))
+                            .font(.system(size: 30))
                             .foregroundColor(selectedTab == index ? .blue : .gray)
                         Text(tabs[index].title)
-                            .font(.system(size:  9))
+                            .font(.system(size:  12))
                             .foregroundColor(selectedTab == index ? .blue : .gray)
                     }
                     .frame(maxWidth: .infinity)
